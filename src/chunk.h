@@ -9,13 +9,29 @@ typedef enum {
     RETURN,
 } OpCode;
 
+
+typedef struct {
+    int length;
+    int number;
+} Line;
+
+typedef struct {
+    int count;
+    int capacity;
+    Line* lines;
+} LineArray;
+
 typedef struct {
     int count;
     int capacity;
     uint8_t* code;
-    int* lines;
+    LineArray lines;
     ValueArray constants;
 } Chunk;
+
+void initLineArray(LineArray* lineArray);
+void freeLineArray(LineArray* lineArray);
+void writeLineArray(LineArray* lineArray, int line);
 
 void initChunk(Chunk* chunk);
 void freeChunk(Chunk* chunk);
