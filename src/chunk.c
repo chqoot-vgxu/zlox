@@ -14,7 +14,7 @@ void freeLineArray(LineArray* lineArray) {
     initLineArray(lineArray);
 }
 
-void writeLineArray(LineArray* lineArray, int line){
+void writeLineArray(LineArray* lineArray, int line) {
     if (lineArray->capacity < lineArray->count + 1) {
         int oldCapacity = lineArray->capacity;
         lineArray->capacity = GROW_CAPACITY(oldCapacity);
@@ -22,9 +22,9 @@ void writeLineArray(LineArray* lineArray, int line){
     }
 
     int count = lineArray->count;
-    Line * lines = lineArray->lines;
-    if (lines[count-1].number == line) {
-        lines[count-1].length++;
+    Line* lines = lineArray->lines;
+    if (lines[count - 1].number == line) {
+        lines[count - 1].length++;
     } else {
         lines[count].length = 1;
         lines[count].number = line;
@@ -32,17 +32,17 @@ void writeLineArray(LineArray* lineArray, int line){
     }
 }
 
-void initChunk(Chunk *chunk) {
+void initChunk(Chunk* chunk) {
     chunk->count = 0;
     chunk->capacity = 0;
     chunk->code = NULL;
-    initLineArray(&chunk->lines);
+    initLineArray(&chunk->lineArray);
     initValueArray(&chunk->constants);
 }
 
-void freeChunk(Chunk *chunk) {
+void freeChunk(Chunk* chunk) {
     FREE_ARRAY(uint8_t, chunk->code, chunk->capacity);
-    freeLineArray(&chunk->lines);
+    freeLineArray(&chunk->lineArray);
     freeValueArray(&chunk->constants);
     initChunk(chunk);
 }
@@ -56,10 +56,10 @@ void writeChunk(Chunk* chunk, uint8_t byte, int line) {
 
     chunk->code[chunk->count] = byte;
     chunk->count++;
-    writeLineArray(&chunk->lines, line);
+    writeLineArray(&chunk->lineArray, line);
 }
 
 int addConstant(Chunk* chunk, Value value) {
-  writeValueArray(&chunk->constants, value);
-  return chunk->constants.count - 1;
+    writeValueArray(&chunk->constants, value);
+    return chunk->constants.count - 1;
 }

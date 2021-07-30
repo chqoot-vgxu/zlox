@@ -4,13 +4,13 @@
 #include "debug.h"
 #include "value.h"
 
-static int * expandLines(LineArray* lineArray) {
+static int* expandLines(LineArray* lineArray) {
     size_t expandedLength = 0;
     for (int i = 0; i < lineArray->count; i++) {
         expandedLength += lineArray->lines[i].length;
     }
 
-    int * expandedLines = (int*) malloc(expandedLength);
+    int* expandedLines = (int*)malloc(expandedLength);
     int expandedIndex = 0;
     for (int index = 0; index < lineArray->count; index++) {
         for (int i = 0; i < lineArray->lines[index].length; i++) {
@@ -25,10 +25,12 @@ static int * expandLines(LineArray* lineArray) {
 void disassembleChunk(Chunk* chunk, const char* name) {
     printf("== %s ==\n", name);
 
-    int * lines = expandLines(&chunk->lines);
+    int* lines = expandLines(&chunk->lineArray);
     for (int offset = 0; offset < chunk->count;) {
         offset = disassembleInstruction(chunk, lines, offset);
     }
+
+    free(lines);
 }
 
 static int simpleInstruction(const char* name, int offset) {
@@ -54,14 +56,12 @@ int disassembleInstruction(Chunk* chunk, int* lines, int offset) {
 
     uint8_t instruction = chunk->code[offset];
     switch (instruction) {
-        case CONSTANT:
-            return constantInstruction("OP_CONSTANT", chunk, offset);
+        case LOAD_CONST:
+            return constantInstruction("LOAD_CONST", chunk, offset);
         case RETURN:
-            return simpleInstruction("OP_RETURN", offset);
+            return simpleInstruction("RETURN", offset);
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;
     }
-
-    free(lines);
 }

@@ -5,7 +5,7 @@
 #include "value.h"
 
 typedef enum {
-    CONSTANT,
+    LOAD_CONST,
     RETURN,
 } OpCode;
 
@@ -25,7 +25,7 @@ typedef struct {
     int count;
     int capacity;
     uint8_t* code;
-    LineArray lines;
+    LineArray lineArray;
     ValueArray constants;
 } Chunk;
 
