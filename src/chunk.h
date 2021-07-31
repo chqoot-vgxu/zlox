@@ -6,6 +6,7 @@
 
 typedef enum {
     LOAD_CONST,
+    UNARY_NEGATE,
     RETURN,
 } OpCode;
 

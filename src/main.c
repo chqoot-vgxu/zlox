@@ -10,7 +10,8 @@ int main() {
     int constant = addConstant(&chunk, 1.2);
     writeChunk(&chunk, LOAD_CONST, 123);
     writeChunk(&chunk, constant, 123);
-    writeChunk(&chunk, RETURN, 123);
+    writeChunk(&chunk, UNARY_NEGATE, 123);
+    writeChunk(&chunk, RETURN, 124);
     interpret(&chunk);
     freeVM();
     freeChunk(&chunk);

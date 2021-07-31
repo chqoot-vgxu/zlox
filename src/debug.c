@@ -50,6 +50,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
     switch (instruction) {
         case LOAD_CONST:
             return constantInstruction("LOAD_CONST", chunk, offset);
+        case UNARY_NEGATE:
+            return simpleInstruction("OP_NEGATE", offset);
         case RETURN:
             return simpleInstruction("RETURN", offset);
         default:

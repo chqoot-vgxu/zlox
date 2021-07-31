@@ -50,6 +50,10 @@ static InterpretResult run() {
                 push(constant);
                 break;
             }
+
+            case UNARY_NEGATE:
+                push(-pop()); break;
+
             case RETURN: {
                 printValue(pop());
                 printf("\n");
