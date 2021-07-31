@@ -42,7 +42,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
     printf("%04d ", offset);
     if (offset > 0 && getLine(&chunk->lineArray, offset) == getLine(&chunk->lineArray, offset - 1)) {
         printf("   | ");
-    } else {
+    }
+    else {
         printf("%4d ", getLine(&chunk->lineArray, offset));
     }
 
@@ -50,10 +51,25 @@ int disassembleInstruction(Chunk* chunk, int offset) {
     switch (instruction) {
         case LOAD_CONST:
             return constantInstruction("LOAD_CONST", chunk, offset);
+
         case UNARY_NEGATE:
-            return simpleInstruction("OP_NEGATE", offset);
+            return simpleInstruction("UNARY_NEGATE", offset);
+
+        case BINARY_ADD:
+            return simpleInstruction("BINARY_ADD", offset);
+
+        case BINARY_SUBTRACT:
+            return simpleInstruction("BINARY_SUBTRACT", offset);
+
+        case BINARY_MULTIPLY:
+            return simpleInstruction("BINARY_MULTIPLY", offset);
+
+        case BINARY_DIVIDE:
+            return simpleInstruction("BINARY_DIVIDE", offset);
+
         case RETURN:
             return simpleInstruction("RETURN", offset);
+
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;

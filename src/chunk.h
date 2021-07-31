@@ -7,6 +7,10 @@
 typedef enum {
     LOAD_CONST,
     UNARY_NEGATE,
+    BINARY_ADD,
+    BINARY_SUBTRACT,
+    BINARY_MULTIPLY,
+    BINARY_DIVIDE,
     RETURN,
 } OpCode;
 
