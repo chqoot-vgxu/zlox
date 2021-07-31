@@ -4,7 +4,7 @@
 #include "memory.h"
 
 void initLineArray(LineArray* lineArray) {
-    lineArray->count = 0;
+    lineArray->count = 1;
     lineArray->capacity = 0;
     lineArray->lines = NULL;
 }
@@ -19,16 +19,23 @@ void writeLineArray(LineArray* lineArray, int line) {
         int oldCapacity = lineArray->capacity;
         lineArray->capacity = GROW_CAPACITY(oldCapacity);
         lineArray->lines = GROW_ARRAY(Line, lineArray->lines, oldCapacity, lineArray->capacity);
+
+        // zero out new entries
+        for (int i = oldCapacity; i < lineArray->capacity; i++) {
+            lineArray->lines[i].length = 0;
+            lineArray->lines[i].number = 0;
+        }
     }
 
     int count = lineArray->count;
     Line* lines = lineArray->lines;
+
     if (lines[count - 1].number == line) {
         lines[count - 1].length++;
     } else {
         lines[count].length = 1;
         lines[count].number = line;
-        count++;
+        lineArray->count++;
     }
 }
 
