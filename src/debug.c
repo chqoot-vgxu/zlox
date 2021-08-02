@@ -32,7 +32,7 @@ static int simpleInstruction(const char* name, int offset) {
 
 static int constantInstruction(const char* name, Chunk* chunk, int offset) {
     uint8_t constant = chunk->code[offset + 1];
-    printf("%-16s %4d '", name, constant);
+    printf("%-20s %4d '", name, constant);
     printValue(chunk->constants.values[constant]);
     printf("'\n");
     return offset + 2;
@@ -77,10 +77,10 @@ int disassembleInstruction(Chunk* chunk, int offset) {
             return simpleInstruction("COMPARE_LESS_THAN", offset);
 
         case COMPARE_LESS_OR_EQUAL:
-            return simpleInstruction("OP_LESS", offset);
+            return simpleInstruction("COMPARE_LESS_OR_EQUAL", offset);
 
         case BINARY_ADD:
-            return simpleInstruction("COMPARE_LESS_OR_EQUAL", offset);
+            return simpleInstruction("BINARY_ADD", offset);
 
         case BINARY_SUBTRACT:
             return simpleInstruction("BINARY_SUBTRACT", offset);

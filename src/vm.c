@@ -1,8 +1,11 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "common.h"
 #include "compiler.h"
+#include "object.h"
+#include "memory.h"
 #include "debug.h"
 #include "vm.h"
 
@@ -27,9 +30,11 @@ static void runtimeError(const char* format, ...) {
 
 void initVM() {
     resetStack();
+    vm.objects = NULL;
 }
 
 void freeVM() {
+    freeObjects();
 }
 
 void push(Value value) {
@@ -48,6 +53,17 @@ static Value peek(int distance) {
 
 static bool isFalsey(Value value) {
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
+static void concatenate(ObjString* a, ObjString* b) {
+    int length = a->length + b->length;
+    char* chars = ALLOCATE(char, length + 1);
+    memcpy(chars, a->chars, a->length);
+    memcpy(chars + a->length, b->chars, b->length);
+    chars[length] = '\0';
+
+    ObjString* result = makeString(chars, length);
+    push(OBJ_VAL(result));
 }
 
 static InterpretResult run() {
@@ -113,24 +129,38 @@ static InterpretResult run() {
             }
 
             case COMPARE_GREATER_THAN:
-                BINARY_OP(BOOL_VAL, >);
+                BINARY_OP(BOOL_VAL, > );
                 break;
 
             case COMPARE_GREATER_OR_EQUAL:
-                BINARY_OP(BOOL_VAL, >=);
+                BINARY_OP(BOOL_VAL, >= );
                 break;
 
             case COMPARE_LESS_THAN:
-                BINARY_OP(BOOL_VAL, <);
+                BINARY_OP(BOOL_VAL, < );
                 break;
 
             case COMPARE_LESS_OR_EQUAL:
-                BINARY_OP(BOOL_VAL, <=);
+                BINARY_OP(BOOL_VAL, <= );
                 break;
 
-            case BINARY_ADD:
-                BINARY_OP(NUMBER_VAL, +);
+            case BINARY_ADD: {
+                if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+                    ObjString* b = AS_STRING(pop());
+                    ObjString* a = AS_STRING(pop());
+                    concatenate(a, b);
+                }
+                else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+                    double b = AS_NUMBER(pop());
+                    double a = AS_NUMBER(pop());
+                    push(NUMBER_VAL(a + b));
+                }
+                else {
+                    runtimeError("Operands must be two numbers or two strings.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
                 break;
+            }
 
             case BINARY_SUBTRACT:
                 BINARY_OP(NUMBER_VAL, -);
