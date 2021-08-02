@@ -4,7 +4,7 @@
 #include "debug.h"
 #include "value.h"
 
-static int getLine(LineArray* lineArray, int offset) {
+int getLine(LineArray* lineArray, int offset) {
     int expandedIndex = 0;
     for (int index = 0; index < lineArray->count; index++) {
         for (int i = 0; i < lineArray->lines[index].length; i++) {
@@ -52,11 +52,35 @@ int disassembleInstruction(Chunk* chunk, int offset) {
         case LOAD_CONST:
             return constantInstruction("LOAD_CONST", chunk, offset);
 
-        case UNARY_NEGATE:
-            return simpleInstruction("UNARY_NEGATE", offset);
+        case LOAD_NIL:
+            return simpleInstruction("LOAD_NIL", offset);
+
+        case LOAD_TRUE:
+            return simpleInstruction("LOAD_TRUE", offset);
+
+        case LOAD_FALSE:
+            return simpleInstruction("LOAD_FALSE", offset);
+
+        case COMPARE_EQUAL:
+            return simpleInstruction("COMPARE_EQUAL", offset);
+
+        case COMPARE_NOT_EQUAL:
+            return simpleInstruction("COMPARE_NOT_EQUAL", offset);
+
+        case COMPARE_GREATER_THAN:
+            return simpleInstruction("COMPARE_GREATER_THAN", offset);
+
+        case COMPARE_GREATER_OR_EQUAL:
+            return simpleInstruction("COMPARE_GREATER_OR_EQUAL", offset);
+            
+        case COMPARE_LESS_THAN:
+            return simpleInstruction("COMPARE_LESS_THAN", offset);
+
+        case COMPARE_LESS_OR_EQUAL:
+            return simpleInstruction("OP_LESS", offset);
 
         case BINARY_ADD:
-            return simpleInstruction("BINARY_ADD", offset);
+            return simpleInstruction("COMPARE_LESS_OR_EQUAL", offset);
 
         case BINARY_SUBTRACT:
             return simpleInstruction("BINARY_SUBTRACT", offset);
@@ -66,6 +90,12 @@ int disassembleInstruction(Chunk* chunk, int offset) {
 
         case BINARY_DIVIDE:
             return simpleInstruction("BINARY_DIVIDE", offset);
+
+        case UNARY_NOT:
+            return simpleInstruction("UNARY_NOT", offset);
+
+        case UNARY_NEGATE:
+            return simpleInstruction("UNARY_NEGATE", offset);
 
         case RETURN:
             return simpleInstruction("RETURN", offset);
