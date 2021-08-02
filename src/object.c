@@ -33,10 +33,16 @@ ObjString* makeString(const char* chars, int length) {
     return allocateString(chars, length);
 }
 
-void printObject(Value value) {
+ObjString* objectToString(Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_STRING:
-            printf("%s", AS_CSTRING(value));
-            break;
+            return AS_STRING(value);
+
+        default:
+            return NULL; // Unreachable
     }
+}
+
+void printObject(Value value) {
+    printf("%s",objectToString(value)->chars);
 }
