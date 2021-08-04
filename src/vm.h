@@ -16,6 +16,7 @@ typedef struct {
 
     Obj* objects;
 
+    Table globals;
     Table strings;
 } VM;
 

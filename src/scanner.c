@@ -76,6 +76,7 @@ static void skipWhitespace() {
         char c = peek();
         switch (c) {
             case ' ':
+            case '\n':
             case '\r':
             case '\t':
                 advance();
@@ -134,7 +135,7 @@ static TokenType identifierType() {
             }
             break;
     }
-    return TOKEN_ERROR;
+    return TOKEN_IDENTIFIER;
 }
 
 static Token identifier() {

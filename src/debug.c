@@ -61,6 +61,18 @@ int disassembleInstruction(Chunk* chunk, int offset) {
         case LOAD_FALSE:
             return simpleInstruction("LOAD_FALSE", offset);
 
+        case POP_TOP:
+            return simpleInstruction("POP_TOP", offset);
+
+        case DEFINE_GLOBAL:
+            return constantInstruction("DEFINE_GLOBAL", chunk, offset);
+
+        case LOAD_GLOBAL:
+            return constantInstruction("LOAD_GLOBAL", chunk, offset);
+
+        case STORE_GLOBAL:
+            return constantInstruction("STORE_GLOBAL", chunk, offset);
+
         case COMPARE_EQUAL:
             return simpleInstruction("COMPARE_EQUAL", offset);
 
@@ -72,7 +84,7 @@ int disassembleInstruction(Chunk* chunk, int offset) {
 
         case COMPARE_GREATER_OR_EQUAL:
             return simpleInstruction("COMPARE_GREATER_OR_EQUAL", offset);
-            
+
         case COMPARE_LESS_THAN:
             return simpleInstruction("COMPARE_LESS_THAN", offset);
 

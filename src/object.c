@@ -42,6 +42,12 @@ static uint32_t hashString(const char* key, int length) {
 
 ObjString* makeString(const char* chars, int length) {
     uint32_t hash = hashString(chars, length);
+    ObjString* interned = tableFindString(&vm.strings, chars, length, hash);
+
+    if (interned != NULL) {
+        return interned;
+    }
+
     return allocateString(chars, length, hash);
 }
 
