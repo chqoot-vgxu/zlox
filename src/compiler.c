@@ -504,8 +504,11 @@ static void varDeclaration(bool isValue) {
     if (match(TOKEN_EQUAL)) {
         expression();
     }
-    else {
+    else if (isValue) {
         error("Expect expression after constant value declaration.");
+    }
+    else {
+        emitByte(LOAD_NIL);
     }
 
     consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
