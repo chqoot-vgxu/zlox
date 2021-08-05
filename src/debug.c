@@ -36,6 +36,13 @@ static int byteInstruction(const char* name, Chunk* chunk, int offset) {
     return offset + 2;
 }
 
+static int jumpInstruction(const char* name, int sign, Chunk* chunk, int offset) {
+    uint16_t jump = (uint16_t)(chunk->code[offset + 1] << 8);
+    jump |= chunk->code[offset + 2];
+    printf("%-20s %4d -> %d\n", name, offset, offset + 3 + sign * jump);
+    return offset + 3;
+}
+
 static int constantInstruction(const char* name, Chunk* chunk, int offset) {
     uint8_t constant = chunk->code[offset + 1];
     printf("%-20s %4d '", name, constant);
@@ -123,6 +130,15 @@ int disassembleInstruction(Chunk* chunk, int offset) {
 
         case UNARY_NEGATE:
             return simpleInstruction("UNARY_NEGATE", offset);
+
+        case JUMP_FORWARD:
+            return jumpInstruction("JUMP_FORWARD", 1, chunk, offset);
+
+        case JUMP_IF_FALSE:
+            return jumpInstruction("JUMP_IF_FALSE", 1, chunk, offset);
+
+        case LOOP_BACK:
+            return jumpInstruction("LOOP_BACK", -1, chunk, offset);
 
         case RETURN:
             return simpleInstruction("RETURN", offset);

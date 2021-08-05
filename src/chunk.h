@@ -28,6 +28,9 @@ typedef enum {
     BINARY_DIVIDE,
     UNARY_NOT,
     UNARY_NEGATE,
+    JUMP_FORWARD,
+    JUMP_IF_FALSE,
+    LOOP_BACK,
     RETURN,
 } OpCode;
 
