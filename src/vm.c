@@ -51,6 +51,11 @@ Value pop() {
     return *vm.stackTop;
 }
 
+Value popn(uint8_t n) {
+    vm.stackTop -= n;
+    return *vm.stackTop;
+}
+
 static Value peek(int distance) {
     return vm.stackTop[-1 - distance];
 }
@@ -123,6 +128,24 @@ static InterpretResult run() {
                 pop();
                 break;
 
+            case POP_N: {
+                uint8_t n = READ_BYTE();
+                popn(n);
+                break;
+            }
+
+            case GET_LOCAL: {
+                uint8_t slot = READ_BYTE();
+                push(vm.stack[slot]);
+                break;
+            }
+
+            case SET_LOCAL: {
+                uint8_t slot = READ_BYTE();
+                vm.stack[slot] = peek(0);
+                break;
+            }
+
             case DEFINE_GLOBAL: {
                 ObjString* name = READ_STRING();
                 tableSet(&vm.globals, name, peek(0));
@@ -130,7 +153,7 @@ static InterpretResult run() {
                 break;
             }
 
-            case LOAD_GLOBAL: {
+            case GET_GLOBAL: {
                 ObjString* name = READ_STRING();
                 Value value;
                 if (!tableGet(&vm.globals, name, &value)) {
@@ -141,7 +164,7 @@ static InterpretResult run() {
                 break;
             }
 
-            case STORE_GLOBAL: {
+            case SET_GLOBAL: {
                 ObjString* name = READ_STRING();
                 if (tableSet(&vm.globals, name, peek(0))) {
                     tableDelete(&vm.globals, name);

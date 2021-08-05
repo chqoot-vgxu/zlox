@@ -75,8 +75,10 @@ static void skipWhitespace() {
     for (;;) {
         char c = peek();
         switch (c) {
-            case ' ':
             case '\n':
+                scanner.line++;
+                FALLTHROUGH
+            case ' ':
             case '\r':
             case '\t':
                 advance();
@@ -115,7 +117,16 @@ static TokenType identifierType() {
         case 'p': return checkKeyword(1, 4, "rint", TOKEN_PRINT);
         case 'r': return checkKeyword(1, 5, "eturn", TOKEN_RETURN);
         case 's': return checkKeyword(1, 4, "uper", TOKEN_SUPER);
-        case 'v': return checkKeyword(1, 2, "ar", TOKEN_VAR);
+        case 'v':
+            if (scanner.current - scanner.start > 2 && scanner.start[1] == 'a') {
+                switch (scanner.start[2]) {
+                    case 'r':
+                        return TOKEN_VAR;
+                    case 'l':
+                        return TOKEN_VAL;
+                }
+            }
+            break;
         case 'w': return checkKeyword(1, 4, "hile", TOKEN_WHILE);
         case 'f':
             if (scanner.current - scanner.start > 1) {

@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "common.h"
 #include "compiler.h"
 #include "scanner.h"
+#include "table.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -15,6 +17,20 @@ typedef struct {
     bool hadError;
     bool panicMode;
 } Parser;
+
+typedef struct {
+    Token name;
+    int depth;
+    bool isValue;
+} Local;
+
+typedef struct {
+    Local locals[UINT8_COUNT];
+    int localCount;
+    int scopeDepth;
+} Compiler;
+
+Table globalValNames;
 
 typedef void (*ParseFn)(bool canAssign);
 
@@ -39,6 +55,7 @@ typedef struct {
 } ParseRule;
 
 Parser parser;
+Compiler* current = NULL;
 Chunk* compilingChunk;
 
 static Chunk* currentChunk() {
@@ -136,6 +153,12 @@ static void emitConstant(Value value) {
     emitBytes(LOAD_CONST, makeConstant(value));
 }
 
+static void initCompiler(Compiler* compiler) {
+    compiler->localCount = 0;
+    compiler->scopeDepth = 0;
+    current = compiler;
+}
+
 static void endCompiler() {
     emitReturn();
 #ifdef DEBUG_PRINT_CODE
@@ -143,6 +166,19 @@ static void endCompiler() {
         disassembleChunk(currentChunk(), "code");
     }
 #endif
+}
+
+static void beginScope() {
+    current->scopeDepth++;
+}
+
+static void endScope() {
+    current->scopeDepth--;
+
+    if (current->localCount > 0) {
+        emitBytes(POP_N, current->localCount);
+        current->localCount = 0;
+    }
 }
 
 static void expression();
@@ -194,19 +230,89 @@ static void string(bool canAssign) {
     emitConstant(OBJ_VAL(makeString(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
+static bool identifiersEqual(Token* a, Token* b) {
+    if (a->length != b->length) return false;
+    return memcmp(a->start, b->start, a->length) == 0;
+}
+
+static int resolveLocal(Compiler* compiler, Token* name) {
+    for (int i = compiler->localCount - 1; i >= 0; i--) {
+        Local* local = &compiler->locals[i];
+        if (identifiersEqual(name, &local->name)) {
+            if (local->depth == -1) {
+                // look in the outer scopes
+                continue;
+            }
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 static uint8_t identifierConstant(Token* name) {
     return makeConstant(OBJ_VAL(makeString(name->start, name->length)));
 }
 
-static void namedVariable(Token name, bool canAssign) {
-    uint8_t arg = identifierConstant(&name);
+static void addLocal(Token name) {
+    if (current->localCount == UINT8_COUNT) {
+        error("Too many local variables in function.");
+        return;
+    }
 
-    if (canAssign && match(TOKEN_EQUAL)) {
-        expression();
-        emitBytes(STORE_GLOBAL, arg);
+    Local* local = &current->locals[current->localCount++];
+    local->name = name;
+    local->depth = -1;
+}
+
+static void declareVariable() {
+    if (current->scopeDepth == 0) return;
+
+    Token* name = &parser.previous;
+    for (int i = current->localCount - 1; i >= 0; i--) {
+        Local* local = &current->locals[i];
+        if (local->depth != -1 && local->depth < current->scopeDepth) {
+            break;
+        }
+
+        if (identifiersEqual(name, &local->name)) {
+            error("Already a variable with this name in this scope.");
+        }
+    }
+
+    addLocal(*name);
+}
+
+static void namedVariable(Token name, bool canAssign) {
+    uint8_t getOp, setOp;
+    int arg = resolveLocal(current, &name);
+    if (arg != -1) {
+        getOp = GET_LOCAL;
+        setOp = SET_LOCAL;
     }
     else {
-        emitBytes(LOAD_GLOBAL, arg);
+        arg = identifierConstant(&name);
+        getOp = GET_GLOBAL;
+        setOp = SET_GLOBAL;
+    }
+
+    if (canAssign && match(TOKEN_EQUAL)) {
+        if (setOp == SET_LOCAL && current->locals[arg].isValue) {
+            error("Can't reassign to contant value");
+            return;
+        }
+        
+        ObjString* globalName = AS_STRING(currentChunk()->constants.values[arg]);
+        if (setOp == SET_GLOBAL && tableFindString(&globalValNames, globalName->chars, globalName->length, globalName->hash) != NULL) {
+            error("Can't reassign to contant value");
+            return;
+        }
+
+        expression();
+        emitBytes(setOp, arg);
+    }
+    else {
+        emitBytes(getOp, arg);
     }
 }
 
@@ -266,6 +372,7 @@ ParseRule rules[] = {
   [TOKEN_THIS]          = {NULL,     NULL,   PREC_NONE},
   [TOKEN_TRUE]          = {literal,  NULL,   PREC_NONE},
   [TOKEN_VAR]           = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_VAL]           = {NULL,     NULL,   PREC_NONE},
   [TOKEN_WHILE]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_ERROR]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
@@ -295,10 +402,27 @@ static void parsePrecedence(Precedence precedence) {
 
 static uint8_t parseVariable(const char* errorMessage) {
     consume(TOKEN_IDENTIFIER, errorMessage);
+
+    declareVariable();
+    if (current->scopeDepth > 0) return 0;
+
     return identifierConstant(&parser.previous);
 }
 
-static void defineVariable(uint8_t global) {
+static void markInitialized(bool isValue) {
+    current->locals[current->localCount - 1].depth = current->scopeDepth;
+    current->locals[current->localCount - 1].isValue = isValue;
+}
+
+static void defineVariable(uint8_t global, bool isValue) {
+    if (current->scopeDepth > 0) {
+        markInitialized(isValue);
+        return;
+    }
+
+    if (isValue) {
+        tableSet(&globalValNames, AS_STRING(compilingChunk->constants.values[global]), NIL_VAL);
+    }
     emitBytes(DEFINE_GLOBAL, global);
 }
 
@@ -310,19 +434,27 @@ static void expression() {
     parsePrecedence(PREC_ASSIGNMENT);
 }
 
-static void varDeclaration() {
+static void block() {
+    while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+        declaration();
+    }
+
+    consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+}
+
+static void varDeclaration(bool isValue) {
     uint8_t global = parseVariable("Expect variable name.");
 
     if (match(TOKEN_EQUAL)) {
         expression();
     }
     else {
-        emitByte(LOAD_NIL);
+        error("Expect expression after constant value declaration.");
     }
 
     consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
 
-    defineVariable(global);
+    defineVariable(global, isValue);
 }
 
 static void expressionStatement() {
@@ -357,7 +489,10 @@ static void synchronize() {
 
 static void declaration() {
     if (match(TOKEN_VAR)) {
-        varDeclaration();
+        varDeclaration(false);
+    }
+    else if (match(TOKEN_VAL)) {
+        varDeclaration(true);
     }
     else {
         statement();
@@ -367,11 +502,21 @@ static void declaration() {
 }
 
 static void statement() {
-    expressionStatement();
+    if (match(TOKEN_LEFT_BRACE)) {
+        beginScope();
+        block();
+        endScope();
+    }
+    else {
+        expressionStatement();
+    }
 }
 
 bool compile(const char* source, Chunk* chunk) {
     initScanner(source);
+    Compiler compiler;
+    initCompiler(&compiler);
+    initTable(&globalValNames);
     compilingChunk = chunk;
 
     parser.hadError = false;
@@ -384,5 +529,6 @@ bool compile(const char* source, Chunk* chunk) {
     }
 
     endCompiler();
+    freeTable(&globalValNames);
     return !parser.hadError;
 }

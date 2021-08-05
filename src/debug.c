@@ -30,6 +30,12 @@ static int simpleInstruction(const char* name, int offset) {
     return offset + 1;
 }
 
+static int byteInstruction(const char* name, Chunk* chunk, int offset) {
+    uint8_t slot = chunk->code[offset + 1];
+    printf("%-20s %4d\n", name, slot);
+    return offset + 2;
+}
+
 static int constantInstruction(const char* name, Chunk* chunk, int offset) {
     uint8_t constant = chunk->code[offset + 1];
     printf("%-20s %4d '", name, constant);
@@ -64,14 +70,23 @@ int disassembleInstruction(Chunk* chunk, int offset) {
         case POP_TOP:
             return simpleInstruction("POP_TOP", offset);
 
+        case POP_N:
+            return byteInstruction("POP_N", chunk, offset);
+
+        case GET_LOCAL:
+            return byteInstruction("GET_LOCAL", chunk, offset);
+
+        case SET_LOCAL:
+            return byteInstruction("SET_LOCAL", chunk, offset);
+
         case DEFINE_GLOBAL:
             return constantInstruction("DEFINE_GLOBAL", chunk, offset);
 
-        case LOAD_GLOBAL:
-            return constantInstruction("LOAD_GLOBAL", chunk, offset);
+        case GET_GLOBAL:
+            return constantInstruction("GET_GLOBAL", chunk, offset);
 
-        case STORE_GLOBAL:
-            return constantInstruction("STORE_GLOBAL", chunk, offset);
+        case SET_GLOBAL:
+            return constantInstruction("SET_GLOBAL", chunk, offset);
 
         case COMPARE_EQUAL:
             return simpleInstruction("COMPARE_EQUAL", offset);
