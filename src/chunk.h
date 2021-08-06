@@ -29,7 +29,10 @@ typedef enum {
     UNARY_NOT,
     UNARY_NEGATE,
     JUMP_FORWARD,
-    JUMP_IF_FALSE,
+    POP_JUMP_IF_FALSE,
+    POP_JUMP_IF_TRUE,
+    JUMP_IF_FALSE_OR_POP,
+    JUMP_IF_TRUE_OR_POP,
     LOOP_BACK,
     RETURN,
 } OpCode;

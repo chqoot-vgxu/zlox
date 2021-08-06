@@ -253,9 +253,35 @@ static InterpretResult run() {
                 break;
             }
 
-            case JUMP_IF_FALSE: {
+            case POP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();
-                if (isFalsey(peek(0))) vm.ip += offset;
+                if (isFalsey(pop())) vm.ip += offset;
+                break;
+            }
+
+            case POP_JUMP_IF_TRUE: {
+                uint16_t offset = READ_SHORT();
+                if (!isFalsey(pop())) vm.ip += offset;
+                break;
+            }
+
+            case JUMP_IF_FALSE_OR_POP: {
+                uint16_t offset = READ_SHORT();
+                if (isFalsey(peek(0))) {
+                    vm.ip += offset;
+                    break;
+                }
+                pop();
+                break;
+            }
+
+            case JUMP_IF_TRUE_OR_POP: {
+                uint16_t offset = READ_SHORT();
+                if (!isFalsey(peek(0))) {
+                    vm.ip += offset;
+                    break;
+                }
+                pop();
                 break;
             }
 
