@@ -24,7 +24,7 @@ endif
 
 # Mode configuration.
 ifeq ($(MODE),debug)
-	CFLAGS += -O0 -DDEBUG -g
+	CFLAGS += -O0 -DDEBUG -g -DDEBUG_PRINT_CODE -DDEBUG_TRACE_EXECUTION
 	BUILD_DIR := build/debug
 else
 	CFLAGS += -O3 -flto
