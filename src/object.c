@@ -21,6 +21,20 @@ static Obj* allocateObject(size_t size, ObjType type) {
     return object;
 }
 
+ObjFunction* newFunction() {
+    ObjFunction* function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
+    function->arity = 0;
+    function->name = NULL;
+    initChunk(&function->chunk);
+    return function;
+}
+
+ObjNative* newNative(NativeFn function) {
+    ObjNative* native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
+    native->function = function;
+    return native;
+}
+
 static ObjString* allocateString(const char* chars, int length, uint32_t hash) {
     ObjString* string = ALLOCATE_STRING(length, OBJ_STRING);
     string->length = length;
@@ -53,6 +67,22 @@ ObjString* makeString(const char* chars, int length) {
 
 ObjString* objectToString(Value value) {
     switch (OBJ_TYPE(value)) {
+        case OBJ_FUNCTION:{
+            ObjFunction* function = AS_FUNCTION(value);
+            if (function->name == NULL) {
+                return makeString("<script>", 8);
+            }
+
+            int length = function->name->length + 5;
+            char name[length + 1];
+            sprintf(name, "<fn %s>", function->name->chars);
+            return makeString(name, length);
+        }
+
+        case OBJ_NATIVE: {
+            return makeString("<native fn>", 11);
+        }
+
         case OBJ_STRING:
             return AS_STRING(value);
 

@@ -149,6 +149,9 @@ int disassembleInstruction(Chunk* chunk, int offset) {
         case LOOP_BACK:
             return jumpInstruction("LOOP_BACK", -1, chunk, offset);
 
+        case CALL:
+            return byteInstruction("CALL", chunk, offset);
+
         case RETURN:
             return simpleInstruction("RETURN", offset);
 
