@@ -160,9 +160,10 @@ static void concatenate(ObjString* a, ObjString* b) {
 
 static InterpretResult run() {
     CallFrame* frame = &vm.frames[vm.frameCount - 1];
+    register uint8_t* ip = frame->ip;
 
-#define READ_BYTE() (*frame->ip++)
-#define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
+#define READ_BYTE() (*ip++)
+#define READ_SHORT() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
 #define READ_CONSTANT() (frame->function->chunk.constants.values[READ_BYTE()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op) \
@@ -187,7 +188,7 @@ static InterpretResult run() {
             printf(" ]");
         }
         printf("\n");
-        disassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code));
+        disassembleInstruction(&frame->function->chunk, (int)(ip - frame->function->chunk.code));
 #endif
 
         uint8_t instruction;
@@ -334,26 +335,26 @@ static InterpretResult run() {
 
             case JUMP_FORWARD: {
                 int16_t offset = READ_SHORT();
-                frame->ip += offset;
+                ip += offset;
                 break;
             }
 
             case POP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();
-                if (isFalsey(pop())) frame->ip += offset;
+                if (isFalsey(pop())) ip += offset;
                 break;
             }
 
             case POP_JUMP_IF_TRUE: {
                 uint16_t offset = READ_SHORT();
-                if (!isFalsey(pop())) frame->ip += offset;
+                if (!isFalsey(pop())) ip += offset;
                 break;
             }
 
             case JUMP_IF_FALSE_OR_POP: {
                 uint16_t offset = READ_SHORT();
                 if (isFalsey(peek(0))) {
-                    frame->ip += offset;
+                    ip += offset;
                     break;
                 }
                 pop();
@@ -363,7 +364,7 @@ static InterpretResult run() {
             case JUMP_IF_TRUE_OR_POP: {
                 uint16_t offset = READ_SHORT();
                 if (!isFalsey(peek(0))) {
-                    frame->ip += offset;
+                    ip += offset;
                     break;
                 }
                 pop();
@@ -372,16 +373,18 @@ static InterpretResult run() {
 
             case LOOP_BACK: {
                 uint16_t offset = READ_SHORT();
-                frame->ip -= offset;
+                ip -= offset;
                 break;
             }
 
             case CALL: {
                 int argCount = READ_BYTE();
+                frame->ip = ip;
                 if (!callValue(peek(argCount), argCount)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 frame = &vm.frames[vm.frameCount - 1];
+                ip = frame->ip;
                 break;
             }
 
@@ -396,6 +399,7 @@ static InterpretResult run() {
                 vm.stackTop = frame->slots;
                 push(result);
                 frame = &vm.frames[vm.frameCount - 1];
+                ip = frame->ip;
                 break;
             }
 
