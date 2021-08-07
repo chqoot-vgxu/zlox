@@ -20,6 +20,7 @@ static Value printNative(int argCount, Value* args) {
     int i = 0;
     for (; i < argCount - 1; i++) {
         printValue(args[i]);
+        putchar(' ');
     }
     if (argCount > 0) {
         printValue(args[i]);
