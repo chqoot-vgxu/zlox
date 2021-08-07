@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "debug.h"
+#include "object.h"
 #include "value.h"
 
 int getLine(LineArray* lineArray, int offset) {
@@ -95,6 +96,12 @@ int disassembleInstruction(Chunk* chunk, int offset) {
         case SET_GLOBAL:
             return constantInstruction("SET_GLOBAL", chunk, offset);
 
+        case GET_UPVALUE:
+            return byteInstruction("GET_UPVALUE", chunk, offset);
+
+        case SET_UPVALUE:
+            return byteInstruction("SET_UPVALUE", chunk, offset);
+
         case COMPARE_EQUAL:
             return simpleInstruction("COMPARE_EQUAL", offset);
 
@@ -151,6 +158,26 @@ int disassembleInstruction(Chunk* chunk, int offset) {
 
         case CALL:
             return byteInstruction("CALL", chunk, offset);
+
+        case MAKE_CLOSURE: {
+            offset++;
+            uint8_t constant = chunk->code[offset++];
+            printf("%-24s %4d ", "MAKE_CLOSURE", constant);
+            printValue(chunk->constants.values[constant]);
+            printf("\n");
+
+            ObjFunction* function = AS_FUNCTION(chunk->constants.values[constant]);
+            for (int j = 0; j < function->upvalueCount; j++) {
+                int isLocal = chunk->code[offset++];
+                int index = chunk->code[offset++];
+                printf("%04d      |                     %s %d\n", offset - 2, isLocal ? "local" : "upvalue", index);
+            }
+
+            return offset;
+        }
+
+        case CLOSE_UPVALUE:
+            return simpleInstruction("CLOSE_UPVALUE", offset);
 
         case RETURN:
             return simpleInstruction("RETURN", offset);

@@ -16,6 +16,8 @@ typedef enum {
     DEFINE_GLOBAL,
     GET_GLOBAL,
     SET_GLOBAL,
+    GET_UPVALUE,
+    SET_UPVALUE,
     COMPARE_EQUAL,
     COMPARE_GREATER_THAN,
     COMPARE_LESS_THAN,
@@ -35,6 +37,8 @@ typedef enum {
     JUMP_IF_TRUE_OR_POP,
     LOOP_BACK,
     CALL,
+    MAKE_CLOSURE,
+    CLOSE_UPVALUE,
     RETURN,
 } OpCode;
 
