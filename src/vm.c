@@ -73,7 +73,15 @@ static void defineNative(const char* name, NativeFn function, int arity) {
 
 void initVM() {
     resetStack();
+
+    vm.bytesAllocated = 0;
+    vm.nextGC = 1024 * 1024;
     vm.objects = NULL;
+
+    vm.grayCount = 0;
+    vm.grayCapacity = 0;
+    vm.grayStack = NULL;
+
     initTable(&vm.strings);
     initTable(&vm.globals);
 
@@ -189,15 +197,14 @@ static bool isFalsey(Value value) {
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 
-static void concatenate(ObjString* a, ObjString* b) {
+static ObjString* concatenate(ObjString* a, ObjString* b) {
     int length = a->length + b->length;
     char chars[length + 1];
     memcpy(chars, a->chars, a->length);
     memcpy(chars + a->length, b->chars, b->length);
     chars[length] = '\0';
 
-    ObjString* result = makeString(chars, length);
-    push(OBJ_VAL(result));
+    return makeString(chars, length);
 }
 
 static InterpretResult run() {
@@ -347,9 +354,12 @@ static InterpretResult run() {
 
             case BINARY_ADD: {
                 if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
-                    ObjString* b = AS_STRING(pop());
-                    ObjString* a = AS_STRING(pop());
-                    concatenate(a, b);
+                    ObjString* b = AS_STRING(peek(0));
+                    ObjString* a = AS_STRING(peek(1));
+                    ObjString* r = concatenate(a, b);
+                    pop();
+                    pop();
+                    push(OBJ_VAL(r));
                 }
                 else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
                     double b = AS_NUMBER(pop());
