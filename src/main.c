@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "vm.h"
 #include "object.h"
+#include "option.h"
 
 static void repl() {
     char line[1024];
@@ -61,18 +62,17 @@ static void runFile(const char* path) {
     if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, const char* argv[]) {
     initVM();
 
-    if (argc == 1) {
+    parseArgs(argc, argv);
+
+    if (config.fileName == NULL) {
+        if (!config.quiet) printf("zlox version %s\n", VERSION_NUMBER);
         repl();
     }
-    else if (argc == 2) {
-        runFile(argv[1]);
-    }
     else {
-        fprintf(stderr, "Usage: clox [path]\n");
-        exit(64);
+        runFile(config.fileName);
     }
 
     freeVM();
