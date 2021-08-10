@@ -27,6 +27,19 @@ static Obj* allocateObject(size_t size, ObjType type) {
     return object;
 }
 
+ObjClass* newClass(ObjString* name) {
+    ObjClass* klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
+    klass->name = name;
+    return klass;
+}
+
+ObjInstance* newInstance(ObjClass* klass) {
+    ObjInstance* instance = ALLOCATE_OBJ(ObjInstance, OBJ_INSTANCE);
+    instance->klass = klass;
+    initTable(&instance->fields);
+    return instance;
+}
+
 ObjClosure* newClosure(ObjFunction* function) {
     ObjUpvalue** upvalues = ALLOCATE(ObjUpvalue*, function->upvalueCount);
     for (int i = 0; i < function->upvalueCount; i++) {
@@ -98,6 +111,20 @@ ObjUpvalue* newUpvalue(Value* slot) {
     return upvalue;
 }
 
+static ObjString* classToString(ObjClass* klass) {
+    int length = klass->name->length + 8;
+    char string[length + 1];
+    sprintf(string, "<class %s>", klass->name->chars);
+    return makeString(string, length);
+}
+
+static ObjString* instanceToString(ObjInstance* instance) {
+    int length = instance->klass->name->length + 9;
+    char string[length + 1];
+    sprintf(string, "%s instance", instance->klass->name->chars);
+    return makeString(string, length);
+}
+
 static ObjString* functionToString(ObjFunction* function) {
     if (function->name == NULL) {
         return makeString("<script>", 8);
@@ -111,6 +138,12 @@ static ObjString* functionToString(ObjFunction* function) {
 
 ObjString* objectToString(Value value) {
     switch (OBJ_TYPE(value)) {
+        case OBJ_CLASS:
+            return classToString(AS_CLASS(value));
+
+        case OBJ_INSTANCE:
+            return instanceToString(AS_INSTANCE(value));
+
         case OBJ_CLOSURE:
             return functionToString(AS_CLOSURE(value)->function);
 

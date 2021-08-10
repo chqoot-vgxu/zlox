@@ -102,6 +102,12 @@ int disassembleInstruction(Chunk* chunk, int offset) {
         case SET_UPVALUE:
             return byteInstruction("SET_UPVALUE", chunk, offset);
 
+        case GET_PROPERTY:
+            return constantInstruction("GET_PROPERTY", chunk, offset);
+
+        case SET_PROPERTY:
+            return constantInstruction("SET_PROPERTY", chunk, offset);
+
         case COMPARE_EQUAL:
             return simpleInstruction("COMPARE_EQUAL", offset);
 
@@ -178,6 +184,9 @@ int disassembleInstruction(Chunk* chunk, int offset) {
 
         case CLOSE_UPVALUE:
             return simpleInstruction("CLOSE_UPVALUE", offset);
+
+        case MAKE_CLASS:
+            return constantInstruction("MAKE_CLASS", chunk, offset);
 
         case RETURN:
             return simpleInstruction("RETURN", offset);

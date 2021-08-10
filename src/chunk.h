@@ -18,6 +18,8 @@ typedef enum {
     SET_GLOBAL,
     GET_UPVALUE,
     SET_UPVALUE,
+    GET_PROPERTY,
+    SET_PROPERTY,
     COMPARE_EQUAL,
     COMPARE_GREATER_THAN,
     COMPARE_LESS_THAN,
@@ -39,6 +41,7 @@ typedef enum {
     CALL,
     MAKE_CLOSURE,
     CLOSE_UPVALUE,
+    MAKE_CLASS,
     RETURN,
 } OpCode;
 

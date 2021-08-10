@@ -261,6 +261,7 @@ static void expression();
 static void statement();
 static void declaration();
 static uint8_t argumentList();
+static uint8_t identifierConstant(Token* name);
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
@@ -287,6 +288,19 @@ static void binary(bool canAssign) {
 static void call(bool canAssign) {
     uint8_t argCount = argumentList();
     emitBytes(CALL, argCount);
+}
+
+static void dot(bool canAssign) {
+    consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
+    uint8_t name = identifierConstant(&parser.previous);
+
+    if (canAssign && match(TOKEN_EQUAL)) {
+        expression();
+        emitBytes(SET_PROPERTY, name);
+    }
+    else {
+        emitBytes(GET_PROPERTY, name);
+    }
 }
 
 static void literal(bool canAssign) {
@@ -480,7 +494,7 @@ ParseRule rules[] = {
   [TOKEN_LEFT_BRACE]    = {NULL,     NULL,   PREC_NONE}, 
   [TOKEN_RIGHT_BRACE]   = {NULL,     NULL,   PREC_NONE},
   [TOKEN_COMMA]         = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_DOT]           = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_DOT]           = {NULL,     dot,    PREC_CALL},
   [TOKEN_MINUS]         = {unary,    binary, PREC_TERM},
   [TOKEN_PLUS]          = {NULL,     binary, PREC_TERM},
   [TOKEN_SEMICOLON]     = {NULL,     NULL,   PREC_NONE},
@@ -642,6 +656,18 @@ static void function(FunctionType type) {
     }
 }
 
+static void classDeclaration() {
+    consume(TOKEN_IDENTIFIER, "Expect class name.");
+    uint8_t nameConstant = identifierConstant(&parser.previous);
+    declareVariable();
+
+    emitBytes(MAKE_CLASS, nameConstant);
+    defineVariable(nameConstant, false);
+
+    consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+    consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+}
+
 static void funDeclaration() {
     uint8_t global = parseVariable("Expect function name.");
     markInitialized(false);
@@ -774,7 +800,10 @@ static void synchronize() {
 }
 
 static void declaration() {
-    if (match(TOKEN_FN)) {
+    if (match(TOKEN_CLASS)) {
+        classDeclaration();
+    }
+    else if (match(TOKEN_FN)) {
         funDeclaration();
     }
     else if (match(TOKEN_VAR)) {
