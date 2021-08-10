@@ -77,6 +77,7 @@ static void blackenObject(Obj* object) {
         case OBJ_CLASS: {
             ObjClass* klass = (ObjClass*)object;
             markObject((Obj*)klass->name);
+            markObject((Obj*)klass->initializer);
             markTable(&klass->methods);
             break;
         }

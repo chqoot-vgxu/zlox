@@ -143,7 +143,7 @@ static bool callValue(Value callee, int argCount) {
             case OBJ_CLASS: {
                 ObjClass* klass = AS_CLASS(callee);
                 vm.stackTop[-argCount - 1] = OBJ_VAL(newInstance(klass));
-                return call(AS_CLOSURE(klass->initializer), argCount);
+                return call(klass->initializer, argCount);
             }
 
             case OBJ_BOUND_METHOD: {
@@ -596,20 +596,19 @@ static InterpretResult run() {
                 defineMethod(READ_STRING());
                 break;
 
-            case MAKE_SPECIAL_METHOD:{
+            case MAKE_SPECIAL_METHOD: {
                 SpecialMethodType type = READ_BYTE();
-                Value method = peek(0);
-                ObjClass* klass = AS_CLASS(peek(1));
+                ObjClosure* method = AS_CLOSURE(pop());
+                ObjClass* klass = AS_CLASS(peek(0));
                 switch (type) {
                     case INITIALIZER:
                         klass->initializer = method;
                         break;
-                    
+
                     default:
                         runtimeError("Unknown special method %d", type);
                         break;
                 }
-                pop();
                 break;
             }
 
