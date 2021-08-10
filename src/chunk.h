@@ -44,8 +44,13 @@ typedef enum {
     CLOSE_UPVALUE,
     MAKE_CLASS,
     MAKE_METHOD,
+    MAKE_SPECIAL_METHOD,
     RETURN,
 } OpCode;
+
+typedef enum {
+    INITIALIZER,
+} SpecialMethodType;
 
 
 typedef struct {

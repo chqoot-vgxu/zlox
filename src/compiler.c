@@ -704,7 +704,13 @@ static void method() {
     }
 
     function(type);
-    emitBytes(MAKE_METHOD, constant);
+
+    if (type == TYPE_INITIALIZER) {
+        emitBytes(MAKE_SPECIAL_METHOD, INITIALIZER);
+    }
+    else {
+        emitBytes(MAKE_METHOD, constant);
+    }
 }
 
 static void classDeclaration() {

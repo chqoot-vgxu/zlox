@@ -55,10 +55,26 @@ static int constantInstruction(const char* name, Chunk* chunk, int offset) {
 static int invokeInstruction(const char* name, Chunk* chunk, int offset) {
     uint8_t constant = chunk->code[offset + 1];
     uint8_t argCount = chunk->code[offset + 2];
-    printf("%-16s (%d args) %4d '", name, argCount, constant);
+    printf("%-15s (%d args) %4d '", name, argCount, constant);
     printValue(chunk->constants.values[constant]);
     printf("'\n");
     return offset + 3;
+}
+
+static int makeSpecialMethodInstruction(const char* name, Chunk* chunk, int offset) {
+    const char * specialName;
+    SpecialMethodType type = chunk->code[offset + 1];
+    switch (type) {
+        case INITIALIZER:
+            specialName = "initializer";
+            break;
+        
+        default:
+            specialName = "unknown";
+    }
+
+    printf("%-27s %d (%s)\n", name, type, specialName);
+    return offset + 2;
 }
 
 int disassembleInstruction(Chunk* chunk, int offset) {
@@ -202,6 +218,9 @@ int disassembleInstruction(Chunk* chunk, int offset) {
 
         case MAKE_METHOD:
             return constantInstruction("MAKE_METHOD", chunk, offset);
+
+        case MAKE_SPECIAL_METHOD:
+            return makeSpecialMethodInstruction("MAKE_SPECIAL_METHOD", chunk, offset);
 
         case RETURN:
             return simpleInstruction("RETURN", offset);
