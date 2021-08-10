@@ -28,10 +28,10 @@ typedef struct {
     int grayCapacity;
     Obj** grayStack;
 
-    ObjUpvalue* openUpvalues;
-
     Table globals;
     Table strings;
+    ObjString* initString;
+    ObjUpvalue* openUpvalues;
 } VM;
 
 typedef enum {

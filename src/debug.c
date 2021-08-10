@@ -52,6 +52,15 @@ static int constantInstruction(const char* name, Chunk* chunk, int offset) {
     return offset + 2;
 }
 
+static int invokeInstruction(const char* name, Chunk* chunk, int offset) {
+    uint8_t constant = chunk->code[offset + 1];
+    uint8_t argCount = chunk->code[offset + 2];
+    printf("%-16s (%d args) %4d '", name, argCount, constant);
+    printValue(chunk->constants.values[constant]);
+    printf("'\n");
+    return offset + 3;
+}
+
 int disassembleInstruction(Chunk* chunk, int offset) {
     printf("%04d ", offset);
     if (offset > 0 && getLine(&chunk->lineArray, offset) == getLine(&chunk->lineArray, offset - 1)) {
@@ -165,6 +174,9 @@ int disassembleInstruction(Chunk* chunk, int offset) {
         case CALL:
             return byteInstruction("CALL", chunk, offset);
 
+        case INVOKE:
+            return invokeInstruction("OP_INVOKE", chunk, offset);
+
         case MAKE_CLOSURE: {
             offset++;
             uint8_t constant = chunk->code[offset++];
@@ -187,6 +199,9 @@ int disassembleInstruction(Chunk* chunk, int offset) {
 
         case MAKE_CLASS:
             return constantInstruction("MAKE_CLASS", chunk, offset);
+
+        case MAKE_METHOD:
+            return constantInstruction("MAKE_METHOD", chunk, offset);
 
         case RETURN:
             return simpleInstruction("RETURN", offset);

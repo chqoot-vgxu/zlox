@@ -39,9 +39,11 @@ typedef enum {
     JUMP_IF_TRUE_OR_POP,
     LOOP_BACK,
     CALL,
+    INVOKE,
     MAKE_CLOSURE,
     CLOSE_UPVALUE,
     MAKE_CLASS,
+    MAKE_METHOD,
     RETURN,
 } OpCode;
 

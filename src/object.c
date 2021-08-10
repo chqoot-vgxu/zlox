@@ -30,6 +30,7 @@ static Obj* allocateObject(size_t size, ObjType type) {
 ObjClass* newClass(ObjString* name) {
     ObjClass* klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
     klass->name = name;
+    initTable(&klass->methods);
     return klass;
 }
 
@@ -38,6 +39,13 @@ ObjInstance* newInstance(ObjClass* klass) {
     instance->klass = klass;
     initTable(&instance->fields);
     return instance;
+}
+
+ObjBoundMethod* newBoundMethod(Value receiver, ObjClosure* method) {
+    ObjBoundMethod* bound = ALLOCATE_OBJ(ObjBoundMethod, OBJ_BOUND_METHOD);
+    bound->receiver = receiver;
+    bound->method = method;
+    return bound;
 }
 
 ObjClosure* newClosure(ObjFunction* function) {
@@ -143,6 +151,9 @@ ObjString* objectToString(Value value) {
 
         case OBJ_INSTANCE:
             return instanceToString(AS_INSTANCE(value));
+
+        case OBJ_BOUND_METHOD:
+            return functionToString(AS_BOUND_METHOD(value)->method->function);
 
         case OBJ_CLOSURE:
             return functionToString(AS_CLOSURE(value)->function);
