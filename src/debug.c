@@ -133,6 +133,9 @@ int disassembleInstruction(Chunk* chunk, int offset) {
         case SET_PROPERTY:
             return constantInstruction("SET_PROPERTY", chunk, offset);
 
+        case GET_SUPER:
+            return constantInstruction("GET_SUPER", chunk, offset);
+
         case COMPARE_EQUAL:
             return simpleInstruction("COMPARE_EQUAL", offset);
 
@@ -191,7 +194,10 @@ int disassembleInstruction(Chunk* chunk, int offset) {
             return byteInstruction("CALL", chunk, offset);
 
         case INVOKE:
-            return invokeInstruction("OP_INVOKE", chunk, offset);
+            return invokeInstruction("INVOKE", chunk, offset);
+
+        case SUPER_INVOKE:
+            return invokeInstruction("SUPER_INVOKE", chunk, offset);
 
         case MAKE_CLOSURE: {
             offset++;
@@ -215,6 +221,9 @@ int disassembleInstruction(Chunk* chunk, int offset) {
 
         case MAKE_CLASS:
             return constantInstruction("MAKE_CLASS", chunk, offset);
+
+        case INHERIT:
+            return simpleInstruction("INHERIT", offset);
 
         case MAKE_METHOD:
             return constantInstruction("MAKE_METHOD", chunk, offset);
