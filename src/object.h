@@ -101,7 +101,7 @@ typedef struct {
 ObjClass* newClass(ObjString* name);
 ObjInstance* newInstance(ObjClass* klass);
 ObjBoundMethod* newBoundMethod(Value receiver, ObjClosure* method);
-ObjClosure* newClosure();
+ObjClosure* newClosure(ObjFunction* function);
 ObjFunction* newFunction();
 ObjNative* newNative(NativeFn function, int arity);
 ObjString* makeString(const char* chars, int length);

@@ -63,7 +63,7 @@ static int invokeInstruction(const char* name, Chunk* chunk, int offset) {
 
 static int makeSpecialMethodInstruction(const char* name, Chunk* chunk, int offset) {
     const char * specialName;
-    SpecialMethodType type = chunk->code[offset + 1];
+    SpecialMethodType type = (SpecialMethodType) chunk->code[offset + 1];
     switch (type) {
         case INITIALIZER:
             specialName = "initializer";

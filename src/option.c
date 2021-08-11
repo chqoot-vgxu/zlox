@@ -69,7 +69,7 @@ static void parseArg(bool useLongName, const char* name) {
 
     Option option = optionList[index];
     if (option.action != NULL) {
-        option.action(option);
+        option.action();
     }
 }
 

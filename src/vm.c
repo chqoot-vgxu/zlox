@@ -278,7 +278,7 @@ static ObjString* concatenate(ObjString* a, ObjString* b) {
 
 static InterpretResult run() {
     CallFrame* frame = &vm.frames[vm.frameCount - 1];
-    register uint8_t* ip = frame->ip;
+    uint8_t* ip = frame->ip;
 
 #define READ_BYTE() (*ip++)
 #define READ_SHORT() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
@@ -637,7 +637,7 @@ static InterpretResult run() {
                 break;
 
             case MAKE_SPECIAL_METHOD: {
-                SpecialMethodType type = READ_BYTE();
+                SpecialMethodType type = (SpecialMethodType) READ_BYTE();
                 ObjClosure* method = AS_CLOSURE(pop());
                 ObjClass* klass = AS_CLASS(peek(0));
                 switch (type) {
