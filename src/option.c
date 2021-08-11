@@ -8,16 +8,19 @@
 Config config = {
     .fileName = NULL,
     .quiet = false,
+    .compileOnly= false,
 };
 
 static void helpAction();
 static void versionAction();
 static void quietAction();
+static void compileOnlyAction();
 
 Option optionList[] = {
-    {"help",    'h', helpAction,    NULL},
-    {"version", 'V', versionAction, VERSION_NUMBER},
-    {"quiet",   'q', quietAction,   "Don't print version number on iteractive shell"},
+    {"help",        'h', helpAction,        NULL},
+    {"version",     'V', versionAction,     VERSION_NUMBER},
+    {"quiet",       'q', quietAction,       "Don't print version number on iteractive shell"},
+    {"compileOnly",  0,  compileOnlyAction, ""},
     {NULL}
 };
 
@@ -86,4 +89,8 @@ void parseArgs(int argc, const char* argv[]) {
             config.fileName = arg;
         }
     }
+}
+
+static void compileOnlyAction() {
+    config.compileOnly = true;
 }

@@ -4,6 +4,7 @@
 typedef struct {
     const char* fileName;
     bool quiet;
+    bool compileOnly;
 } Config;
 
 extern Config config;
