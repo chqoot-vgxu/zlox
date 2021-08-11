@@ -19,7 +19,7 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 #endif
     }
 
-    if (vm.bytesAllocated > vm.nextGC) {
+    if (newSize > oldSize && vm.bytesAllocated > vm.nextGC) {
         collectGarbage();
     }
 
@@ -40,9 +40,7 @@ void markObject(Obj* object) {
     if (object->isMarked) return;
 
 #ifdef DEBUG_LOG_GC
-    printf("%p mark ", (void*)object);
-    printValue(OBJ_VAL(object));
-    printf("\n");
+    printf("%p mark\n", (void*)object);
 #endif
 
     object->isMarked = true;
@@ -68,9 +66,7 @@ static void markArray(ValueArray* array) {
 
 static void blackenObject(Obj* object) {
 #ifdef DEBUG_LOG_GC
-    printf("%p blacken ", (void*)object);
-    printValue(OBJ_VAL(object));
-    printf("\n");
+    printf("%p blacken\n", (void*)object);
 #endif
 
     switch (object->type) {
