@@ -21,7 +21,7 @@ Option optionList[] = {
     {"version",     'V', versionAction,     VERSION_NUMBER},
     {"quiet",       'q', quietAction,       "Don't print version number on iteractive shell"},
     {"compileOnly",  0,  compileOnlyAction, ""},
-    {NULL}
+    {NULL, 0, NULL, NULL}
 };
 
 static void helpAction() {
