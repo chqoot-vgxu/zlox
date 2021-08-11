@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include "common.h"
+#include "option.h"
 #include "compiler.h"
 #include "object.h"
 #include "memory.h"
@@ -568,8 +569,8 @@ static InterpretResult run() {
 
             case INVOKE: {
                 ObjString* method = READ_STRING();
-                frame->ip = ip;
                 int argCount = READ_BYTE();
+                frame->ip = ip;
                 if (!invoke(method, argCount)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -579,9 +580,9 @@ static InterpretResult run() {
             }
 
             case SUPER_INVOKE: {
-                frame->ip = ip;
                 ObjString* method = READ_STRING();
                 int argCount = READ_BYTE();
+                frame->ip = ip;
                 ObjClass* superclass = AS_CLASS(pop());
                 if (!invokeFromClass(superclass, method, argCount)) {
                     return INTERPRET_RUNTIME_ERROR;
@@ -683,6 +684,18 @@ static InterpretResult run() {
 InterpretResult interpret(const char* source) {    
     ObjFunction* function = compile(source);
     if (function == NULL) return INTERPRET_COMPILE_ERROR;
+
+    if (config.compileOnly) {
+        for (int i = 0; i < function->chunk.constants.count; i++) {
+            Value value = function->chunk.constants.values[i];
+            if (IS_FUNCTION(value)) {
+                ObjFunction* f = AS_FUNCTION(function->chunk.constants.values[i]);
+                disassembleChunk(&f->chunk, f->name->chars);
+            }
+        }
+        disassembleChunk(&function->chunk, "<script>");
+        return INTERPRET_OK;
+    }
 
     push(OBJ_VAL(function));
     ObjClosure* closure = newClosure(function);
