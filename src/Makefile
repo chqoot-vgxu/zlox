@@ -24,10 +24,10 @@ endif
 
 # Mode configuration.
 ifeq ($(MODE),debug)
-	CFLAGS += -O0 -DDEBUG -g -DDEBUG_PRINT_CODE -DSTRESS_TEST_GC #-DDEBUG_TRACE_EXECUTION
+	CFLAGS += -O0 -DDEBUG -g -DNAN_BOXING #-DDEBUG_PRINT_CODE -DSTRESS_TEST_GC -DDEBUG_TRACE_EXECUTION
 	BUILD_DIR := build/debug
 else
-	CFLAGS += -O3 -flto
+	CFLAGS += -O3 -flto -DNAN_BOXING
 	BUILD_DIR := build/release
 endif
 
