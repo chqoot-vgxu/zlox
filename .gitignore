@@ -1,6 +1,15 @@
-build/
-
+# Intermediate and build stuff
+.sass-cache/
+/build/
+clox
+.idea/
 .vscode/
 
 callgrind.out.*
-*.lox
+
+# Test scratch file
+test.lox
+
+# Dart stuff.
+/tool/.dart_tool/
+/tool/.packages

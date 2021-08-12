@@ -1,0 +1,8 @@
+class A {}
+
+fn f() {
+  class B < A {}
+  return B;
+}
+
+println(f()); // expect: <class B>

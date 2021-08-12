@@ -1,0 +1,11 @@
+var f;
+
+fn foo(param) {
+  fn f_() {
+    println(param);
+  }
+  f = f_;
+}
+foo("param");
+
+f(); // expect: param

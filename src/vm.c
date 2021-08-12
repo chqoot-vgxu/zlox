@@ -147,6 +147,13 @@ static bool callValue(Value callee, int argCount) {
                 if (klass->initializer != NULL) {
                     return call(klass->initializer, argCount);
                 }
+                else if (klass->super != NULL && klass->super->initializer != NULL) {
+                    return call(klass->super->initializer, argCount);
+                }
+                else if (argCount != 0) {
+                    runtimeError("Expected 0 arguments but got %d.", argCount);
+                    return false;
+                }
                 return true;
             }
 
@@ -179,10 +186,16 @@ static bool callValue(Value callee, int argCount) {
     return false;
 }
 
-static bool invokeFromClass(ObjClass* klass, ObjString* name,
-    int argCount) {
+static bool invokeFromClass(ObjClass* klass, ObjString* name, int argCount) {
     Value method;
-    if (!tableGet(&klass->methods, name, &method)) {
+    bool special = false;
+
+    if (strncmp("init", name->chars, name->length) == 0) {
+        method = OBJ_VAL(klass->initializer);
+        special = true;
+    }
+
+    if (!special && !tableGet(&klass->methods, name, &method)) {
         runtimeError("Undefined property '%s'.", name->chars);
         return false;
     }
@@ -210,7 +223,14 @@ static bool invoke(ObjString* name, int argCount) {
 
 static bool bindMethod(ObjClass* klass, ObjString* name) {
     Value method;
-    if (!tableGet(&klass->methods, name, &method)) {
+    bool special = false;
+
+    if (strncmp("init", name->chars, name->length) == 0) {
+        method = OBJ_VAL(klass->initializer);
+        special = true;
+    }
+
+    if (!special && !tableGet(&klass->methods, name, &method)) {
         runtimeError("Undefined property '%s'.", name->chars);
         return false;
     }
@@ -280,6 +300,7 @@ static InterpretResult run() {
     CallFrame* frame = &vm.frames[vm.frameCount - 1];
     uint8_t* ip = frame->ip;
 
+#define SYNC_IP() frame->ip = ip
 #define READ_BYTE() (*ip++)
 #define READ_SHORT() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
 #define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_BYTE()])
@@ -287,6 +308,7 @@ static InterpretResult run() {
 #define BINARY_OP(valueType, op) \
     do { \
         if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
+            SYNC_IP(); \
             runtimeError("Operands must be numbers."); \
             return INTERPRET_RUNTIME_ERROR; \
         } \
@@ -362,6 +384,7 @@ static InterpretResult run() {
                 ObjString* name = READ_STRING();
                 Value value;
                 if (!tableGet(&vm.globals, name, &value)) {
+                    SYNC_IP();
                     runtimeError("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -373,6 +396,7 @@ static InterpretResult run() {
                 ObjString* name = READ_STRING();
                 if (tableSet(&vm.globals, name, peek(0))) {
                     tableDelete(&vm.globals, name);
+                    SYNC_IP();
                     runtimeError("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -393,6 +417,7 @@ static InterpretResult run() {
 
             case GET_PROPERTY: {
                 if (!IS_INSTANCE(peek(0))) {
+                    SYNC_IP();
                     runtimeError("Only instances have properties.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -407,6 +432,7 @@ static InterpretResult run() {
                     break;
                 }
 
+                SYNC_IP();
                 if (!bindMethod(instance->klass, name)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -415,6 +441,7 @@ static InterpretResult run() {
 
             case SET_PROPERTY: {
                 if (!IS_INSTANCE(peek(1))) {
+                    SYNC_IP();
                     runtimeError("Only instances have fields.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -431,6 +458,7 @@ static InterpretResult run() {
                 ObjString* name = READ_STRING();
                 ObjClass* superclass = AS_CLASS(pop());
 
+                SYNC_IP();
                 if (!bindMethod(superclass, name)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -482,6 +510,7 @@ static InterpretResult run() {
                     push(NUMBER_VAL(a + b));
                 }
                 else {
+                    SYNC_IP();
                     runtimeError("Operands must be two numbers or two strings.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -506,6 +535,7 @@ static InterpretResult run() {
 
             case UNARY_NEGATE:
                 if (!IS_NUMBER(peek(0))) {
+                    SYNC_IP();
                     runtimeError("Operand must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -558,7 +588,7 @@ static InterpretResult run() {
 
             case CALL: {
                 int argCount = READ_BYTE();
-                frame->ip = ip;
+                SYNC_IP();
                 if (!callValue(peek(argCount), argCount)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -570,7 +600,7 @@ static InterpretResult run() {
             case INVOKE: {
                 ObjString* method = READ_STRING();
                 int argCount = READ_BYTE();
-                frame->ip = ip;
+                SYNC_IP();
                 if (!invoke(method, argCount)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -582,7 +612,7 @@ static InterpretResult run() {
             case SUPER_INVOKE: {
                 ObjString* method = READ_STRING();
                 int argCount = READ_BYTE();
-                frame->ip = ip;
+                SYNC_IP();
                 ObjClass* superclass = AS_CLASS(pop());
                 if (!invokeFromClass(superclass, method, argCount)) {
                     return INTERPRET_RUNTIME_ERROR;
@@ -620,14 +650,17 @@ static InterpretResult run() {
                 break;
 
             case INHERIT: {
-                Value superclass = peek(1);
-                if (!IS_CLASS(superclass)) {
+                Value superclassValue = peek(1);
+                if (!IS_CLASS(superclassValue)) {
+                    SYNC_IP();
                     runtimeError("Superclass must be a class.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
+                ObjClass* superclass = AS_CLASS(superclassValue);
                 ObjClass* subclass = AS_CLASS(peek(0));
-                tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
+                subclass->super = superclass;
+                tableAddAll(&superclass->methods, &subclass->methods);
                 pop(); // Subclass.
                 break;
             }
@@ -646,6 +679,7 @@ static InterpretResult run() {
                         break;
 
                     default:
+                        SYNC_IP();
                         runtimeError("Unknown special method %d", type);
                         break;
                 }
@@ -669,6 +703,7 @@ static InterpretResult run() {
             }
 
             default:
+                SYNC_IP();
                 runtimeError("Unknown opcode %d", instruction);
                 return INTERPRET_RUNTIME_ERROR;
         }
@@ -679,6 +714,7 @@ static InterpretResult run() {
 #undef READ_CONSTANT
 #undef READ_SHORT
 #undef READ_BYTE
+#undef SYNC_IP
 }
 
 InterpretResult interpret(const char* source) {    

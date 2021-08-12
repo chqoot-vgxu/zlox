@@ -481,10 +481,12 @@ static void namedVariable(Token name, bool canAssign) {
             return;
         }
         
-        ObjString* globalName = AS_STRING(currentChunk()->constants.values[arg]);
-        if (setOp == SET_GLOBAL && tableFindString(&globalValNames, globalName->chars, globalName->length, globalName->hash) != NULL) {
-            error("Can't reassign to contant value");
-            return;
+        if (setOp == SET_GLOBAL) {
+            ObjString* globalName = AS_STRING(currentChunk()->constants.values[arg]);
+            if (tableFindString(&globalValNames, globalName->chars, globalName->length, globalName->hash) != NULL) {
+                error("Can't reassign to contant value");
+                return;
+            }
         }
 
         expression();
@@ -936,7 +938,15 @@ static void declaration() {
     else if (match(TOKEN_VAL)) {
         varDeclaration(true);
     }
-    else if (match(TOKEN_IF)) {
+    else {
+        statement();
+    }
+
+    if (parser.panicMode) synchronize();
+}
+
+static void statement() {
+    if (match(TOKEN_IF)) {
         ifStatement();
     }
     else if (match(TOKEN_RETURN)) {
@@ -948,15 +958,7 @@ static void declaration() {
     else if (match(TOKEN_FOR)) {
         forStatement();
     }
-    else {
-        statement();
-    }
-
-    if (parser.panicMode) synchronize();
-}
-
-static void statement() {
-    if (match(TOKEN_LEFT_BRACE)) {
+    else if (match(TOKEN_LEFT_BRACE)) {
         beginScope();
         block();
         endScope();
