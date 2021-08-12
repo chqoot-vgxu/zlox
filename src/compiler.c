@@ -82,7 +82,7 @@ Compiler* current = NULL;
 ClassCompiler* currentClass = NULL;
 
 static Chunk* currentChunk() {
-  return &current->function->chunk;
+    return &current->function->chunk;
 }
 
 static void errorAt(Token* token, const char* message) {
@@ -134,6 +134,13 @@ static void consume(TokenType type, const char* message) {
 
 static bool check(TokenType type) {
     return parser.current.type == type;
+}
+
+static bool checkAny(int len, TokenType* types) {
+    for (int i = 0; i < len; i++) {
+        if (check(types[i])) return true;
+    }
+    return false;
 }
 
 static bool match(TokenType type) {
@@ -458,6 +465,29 @@ static void or_(bool canAssign) {
     patchJump(elseJump);
 }
 
+static void assign(uint8_t getOp, uint8_t setOp, int arg) {
+    if (match(TOKEN_EQUAL)) {
+        expression();
+        emitBytes(setOp, arg);
+        return;
+    }
+
+    uint8_t binaryOp;
+    switch (parser.current.type) {
+        case TOKEN_PLUS_EQUALS:  binaryOp = BINARY_ADD; break;
+        case TOKEN_MINUS_EQUALS: binaryOp = BINARY_SUBTRACT; break;
+        case TOKEN_SLASH_EQUALS: binaryOp = BINARY_DIVIDE; break;
+        case TOKEN_STAR_EQUALS:  binaryOp = BINARY_MULTIPLY; break;
+        default: break; // unreachable
+    }
+
+    emitBytes(getOp, arg);
+    advance();
+    expression();
+    emitByte(binaryOp);
+    emitBytes(setOp, arg);
+}
+
 static void namedVariable(Token name, bool canAssign) {
     uint8_t getOp, setOp;
     int arg = resolveLocal(current, &name);
@@ -475,12 +505,13 @@ static void namedVariable(Token name, bool canAssign) {
         setOp = SET_GLOBAL;
     }
 
-    if (canAssign && match(TOKEN_EQUAL)) {
+    TokenType assignmentTypes[] = {TOKEN_EQUAL, TOKEN_PLUS_EQUALS, TOKEN_MINUS_EQUALS, TOKEN_SLASH_EQUALS, TOKEN_STAR_EQUALS};
+    if (canAssign && checkAny(5, assignmentTypes)) {
         if (setOp == SET_LOCAL && current->locals[arg].isValue) {
             error("Can't reassign to contant value");
             return;
         }
-        
+
         if (setOp == SET_GLOBAL) {
             ObjString* globalName = AS_STRING(currentChunk()->constants.values[arg]);
             if (tableFindString(&globalValNames, globalName->chars, globalName->length, globalName->hash) != NULL) {
@@ -489,8 +520,7 @@ static void namedVariable(Token name, bool canAssign) {
             }
         }
 
-        expression();
-        emitBytes(setOp, arg);
+        assign(getOp, setOp, arg);
     }
     else {
         emitBytes(getOp, arg);
@@ -539,8 +569,8 @@ static void this_(bool canAssign) {
         return;
     }
 
-  variable(false);
-} 
+    variable(false);
+}
 
 static void unary(bool canAssign) {
     TokenType operatorType = parser.previous.type;
@@ -584,7 +614,7 @@ ParseRule rules[] = {
   [TOKEN_ELSE]          = {NULL,     NULL,   PREC_NONE},
   [TOKEN_FALSE]         = {literal,  NULL,   PREC_NONE},
   [TOKEN_FOR]           = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_FN]           = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_FN]            = {NULL,     NULL,   PREC_NONE},
   [TOKEN_IF]            = {NULL,     NULL,   PREC_NONE},
   [TOKEN_NIL]           = {literal,  NULL,   PREC_NONE},
   [TOKEN_OR]            = {NULL,     or_,    PREC_OR},

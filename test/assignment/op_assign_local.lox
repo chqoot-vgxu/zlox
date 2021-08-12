@@ -1,0 +1,15 @@
+{
+  var a = 0;
+
+  a += 2;
+  println(a); // expect: 2
+
+  a -= 1;
+  println(a); // expect: 1
+
+  a *= 4;
+  println(a); // expect: 4
+
+  a /= 2;
+  println(a); // expect: 2
+}

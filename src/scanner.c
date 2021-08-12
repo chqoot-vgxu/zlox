@@ -198,10 +198,18 @@ Token scanToken() {
         case ';': return makeToken(TOKEN_SEMICOLON);
         case ',': return makeToken(TOKEN_COMMA);
         case '.': return makeToken(TOKEN_DOT);
-        case '-': return makeToken(TOKEN_MINUS);
-        case '+': return makeToken(TOKEN_PLUS);
-        case '/': return makeToken(TOKEN_SLASH);
-        case '*': return makeToken(TOKEN_STAR);
+        case '-':
+            return makeToken(
+                match('=') ? TOKEN_MINUS_EQUALS : TOKEN_MINUS);
+        case '+':
+            return makeToken(
+                match('=') ? TOKEN_PLUS_EQUALS : TOKEN_PLUS);
+        case '/':
+            return makeToken(
+                match('=') ? TOKEN_SLASH_EQUALS : TOKEN_SLASH);
+        case '*':
+            return makeToken(
+                match('=') ? TOKEN_STAR_EQUALS : TOKEN_STAR);
         case '!':
             return makeToken(
                 match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
