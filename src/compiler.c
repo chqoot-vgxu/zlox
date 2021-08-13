@@ -478,7 +478,7 @@ static void assign(uint8_t getOp, uint8_t setOp, int arg) {
         case TOKEN_MINUS_EQUALS: binaryOp = BINARY_SUBTRACT; break;
         case TOKEN_SLASH_EQUALS: binaryOp = BINARY_DIVIDE; break;
         case TOKEN_STAR_EQUALS:  binaryOp = BINARY_MULTIPLY; break;
-        default: break; // unreachable
+        default: error("Invalid operator."); return; // unreachable
     }
 
     emitBytes(getOp, arg);
