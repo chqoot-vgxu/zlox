@@ -22,7 +22,6 @@ typedef struct {
 typedef struct {
     Token name;
     int depth;
-    bool isValue;
     bool isCaptured;
 } Local;
 
@@ -235,7 +234,6 @@ static void initCompiler(Compiler* compiler, FunctionType type) {
 
     Local* local = &current->locals[current->localCount++];
     local->depth = 0;
-    local->isValue = false;
     local->isCaptured = false;
 
     if (type != TYPE_FUNCTION) {
@@ -507,19 +505,6 @@ static void namedVariable(Token name, bool canAssign) {
 
     TokenType assignmentTypes[] = {TOKEN_EQUAL, TOKEN_PLUS_EQUALS, TOKEN_MINUS_EQUALS, TOKEN_SLASH_EQUALS, TOKEN_STAR_EQUALS};
     if (canAssign && checkAny(5, assignmentTypes)) {
-        if (setOp == SET_LOCAL && current->locals[arg].isValue) {
-            error("Can't reassign to contant value");
-            return;
-        }
-
-        if (setOp == SET_GLOBAL) {
-            ObjString* globalName = AS_STRING(currentChunk()->constants.values[arg]);
-            if (tableFindString(&globalValNames, globalName->chars, globalName->length, globalName->hash) != NULL) {
-                error("Can't reassign to contant value");
-                return;
-            }
-        }
-
         assign(getOp, setOp, arg);
     }
     else {
