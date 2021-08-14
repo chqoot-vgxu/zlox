@@ -624,7 +624,6 @@ ParseRule rules[] = {
   [TOKEN_THIS]          = {this_,    NULL,   PREC_NONE},
   [TOKEN_TRUE]          = {literal,  NULL,   PREC_NONE},
   [TOKEN_VAR]           = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_VAL]           = {NULL,     NULL,   PREC_NONE},
   [TOKEN_WHILE]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_ERROR]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
@@ -661,21 +660,17 @@ static uint8_t parseVariable(const char* errorMessage) {
     return identifierConstant(&parser.previous);
 }
 
-static void markInitialized(bool isValue) {
+static void markInitialized() {
     if (current->scopeDepth == 0) return;
     current->locals[current->localCount - 1].depth = current->scopeDepth;
-    current->locals[current->localCount - 1].isValue = isValue;
 }
 
-static void defineVariable(uint8_t global, bool isValue) {
+static void defineVariable(uint8_t global) {
     if (current->scopeDepth > 0) {
-        markInitialized(isValue);
+        markInitialized();
         return;
     }
 
-    if (isValue) {
-        tableSet(&globalValNames, AS_STRING(currentChunk()->constants.values[global]), NIL_VAL);
-    }
     emitBytes(DEFINE_GLOBAL, global);
 }
 
@@ -742,7 +737,7 @@ static void function(FunctionType type) {
                 errorAtCurrent("Can't have more than 255 parameters.");
             }
             uint8_t constant = parseVariable("Expect parameter name.");
-            defineVariable(constant, false);
+            defineVariable(constant);
         } while (match(TOKEN_COMMA));
     }
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
@@ -785,7 +780,7 @@ static void classDeclaration() {
     declareVariable();
 
     emitBytes(MAKE_CLASS, nameConstant);
-    defineVariable(nameConstant, false);
+    defineVariable(nameConstant);
 
     ClassCompiler classCompiler;
     classCompiler.hasSuperclass = false;
@@ -802,7 +797,7 @@ static void classDeclaration() {
 
         beginScope();
         addLocal(syntheticToken("super"));
-        defineVariable(0, true);
+        defineVariable(0);
 
         namedVariable(className, false);
         emitByte(INHERIT);
@@ -828,17 +823,14 @@ static void funDeclaration() {
     uint8_t global = parseVariable("Expect function name.");
     markInitialized(false);
     function(TYPE_FUNCTION);
-    defineVariable(global, false);
+    defineVariable(global);
 }
 
-static void varDeclaration(bool isValue) {
+static void varDeclaration() {
     uint8_t global = parseVariable("Expect variable name.");
 
     if (match(TOKEN_EQUAL)) {
         expression();
-    }
-    else if (isValue) {
-        error("Expect expression after constant value declaration.");
     }
     else {
         emitByte(LOAD_NIL);
@@ -846,7 +838,7 @@ static void varDeclaration(bool isValue) {
 
     consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
 
-    defineVariable(global, isValue);
+    defineVariable(global);
 }
 
 static void expressionStatement() {
@@ -963,10 +955,7 @@ static void declaration() {
         funDeclaration();
     }
     else if (match(TOKEN_VAR)) {
-        varDeclaration(false);
-    }
-    else if (match(TOKEN_VAL)) {
-        varDeclaration(true);
+        varDeclaration();
     }
     else {
         statement();
