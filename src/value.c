@@ -13,6 +13,9 @@ void printValue(Value value) {
     else if (IS_NIL(value)) {
         printf("nil");
     }
+    else if (IS_INT(value)) {
+        printf("%d", AS_INT(value));
+    }
     else if (IS_NUMBER(value)) {
         printf("%g", AS_NUMBER(value));
     }
@@ -27,6 +30,10 @@ void printValue(Value value) {
 
         case VAL_NIL:
             printf("nil");
+            break;
+        
+        case VAL_INT:
+            printf("%d", AS_INT(value));
             break;
 
         case VAL_NUMBER:
