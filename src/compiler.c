@@ -806,7 +806,7 @@ static void classDeclaration() {
 
 static void funDeclaration() {
     uint8_t global = parseVariable("Expect function name.");
-    markInitialized(false);
+    markInitialized();
     function(TYPE_FUNCTION);
     defineVariable(global);
 }
@@ -870,7 +870,7 @@ static void forStatement() {
         // No initializer.
     }
     else if (match(TOKEN_VAR)) {
-        varDeclaration(false);
+        varDeclaration();
     }
     else {
         expressionStatement();
