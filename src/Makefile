@@ -22,9 +22,13 @@ ifeq ($(SNIPPET),true)
 	CFLAGS += -Wno-unused-function
 endif
 
+ifeq ($(JEMALLOC),true)
+	CFLAGS += -ljemalloc
+endif
+
 # Mode configuration.
 ifeq ($(MODE),debug)
-	CFLAGS += -O0 -DDEBUG -g -DNAN_BOXING #-DDEBUG_PRINT_CODE -DDEBUG_TRACE_EXECUTION -DSTRESS_TEST_GC
+	CFLAGS += -Og -DDEBUG -g -DNAN_BOXING #-DDEBUG_PRINT_CODE -DDEBUG_TRACE_EXECUTION -DSTRESS_TEST_GC
 	BUILD_DIR := build/debug
 else
 	CFLAGS += -O3 -flto -DNAN_BOXING
