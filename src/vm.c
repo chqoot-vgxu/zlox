@@ -120,7 +120,7 @@ static Value peek(int distance) {
     return vm.stackTop[-1 - distance];
 }
 
-static bool call(ObjClosure* closure, int argCount) {    
+static bool call(ObjClosure* closure, int argCount) {
     if (argCount != closure->function->arity) {
         runtimeError("Expected %d arguments but got %d.", closure->function->arity, argCount);
         return false;
@@ -142,13 +142,14 @@ static bool callValue(Value callee, int argCount) {
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
             case OBJ_CLASS: {
+                Value init;
                 ObjClass* klass = AS_CLASS(callee);
                 vm.stackTop[-argCount - 1] = OBJ_VAL(newInstance(klass));
                 if (klass->initializer != NULL) {
                     return call(klass->initializer, argCount);
                 }
-                else if (klass->super != NULL && klass->super->initializer != NULL) {
-                    return call(klass->super->initializer, argCount);
+                else if (tableGet(&klass->methods, makeString("init", 4), &init)) {
+                    return callValue(init, argCount);
                 }
                 else if (argCount != 0) {
                     runtimeError("Expected 0 arguments but got %d.", argCount);
@@ -188,14 +189,8 @@ static bool callValue(Value callee, int argCount) {
 
 static bool invokeFromClass(ObjClass* klass, ObjString* name, int argCount) {
     Value method;
-    bool special = false;
 
-    if (strncmp("init", name->chars, name->length) == 0) {
-        method = OBJ_VAL(klass->initializer);
-        special = true;
-    }
-
-    if (!special && !tableGet(&klass->methods, name, &method)) {
+    if (!tableGet(&klass->methods, name, &method)) {
         runtimeError("Undefined property '%s'.", name->chars);
         return false;
     }
@@ -221,16 +216,35 @@ static bool invoke(ObjString* name, int argCount) {
     return invokeFromClass(instance->klass, name, argCount);
 }
 
-static bool bindMethod(ObjClass* klass, ObjString* name) {
-    Value method;
-    bool special = false;
+static bool invokeSpecial(SpecialMethodType type, ObjString* name, int argCount) {
+    Value receiver = peek(argCount);
 
-    if (strncmp("init", name->chars, name->length) == 0) {
-        method = OBJ_VAL(klass->initializer);
-        special = true;
+    if (!IS_INSTANCE(receiver)) {
+        runtimeError("Only instances have methods.");
+        return false;
     }
 
-    if (!special && !tableGet(&klass->methods, name, &method)) {
+    ObjClass* klass = AS_INSTANCE(receiver)->klass;
+
+    switch (type) {
+        case INITIALIZER:
+            if (klass->initializer) {
+                return call(klass->initializer, argCount);
+            }
+            break;
+
+        default:
+            runtimeError("Unknown special method %d.", (int)type);
+            return false;
+    }
+
+    return invokeFromClass(klass, name, argCount); // invoke from super
+}
+
+static bool bindMethod(ObjClass* klass, ObjString* name) {
+    Value method;
+
+    if (!tableGet(&klass->methods, name, &method)) {
         runtimeError("Undefined property '%s'.", name->chars);
         return false;
     }
@@ -609,7 +623,20 @@ static InterpretResult run() {
                 break;
             }
 
-            case SUPER_INVOKE: {
+            case INVOKE_SPECIAL: {
+                uint8_t type = READ_BYTE();
+                ObjString* name = READ_STRING();
+                int argCount = READ_BYTE();
+                SYNC_IP();
+                if (!invokeSpecial(type, name, argCount)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                frame = &vm.frames[vm.frameCount - 1];
+                ip = frame->ip;
+                break;
+            }
+
+            case INVOKE_SUPER: {
                 ObjString* method = READ_STRING();
                 int argCount = READ_BYTE();
                 SYNC_IP();
@@ -659,7 +686,6 @@ static InterpretResult run() {
 
                 ObjClass* superclass = AS_CLASS(superclassValue);
                 ObjClass* subclass = AS_CLASS(peek(0));
-                subclass->super = superclass;
                 tableAddAll(&superclass->methods, &subclass->methods);
                 pop(); // Subclass.
                 break;
@@ -671,11 +697,12 @@ static InterpretResult run() {
 
             case MAKE_SPECIAL_METHOD: {
                 SpecialMethodType type = (SpecialMethodType) READ_BYTE();
-                ObjClosure* method = AS_CLOSURE(pop());
-                ObjClass* klass = AS_CLASS(peek(0));
+                ObjClosure* method = AS_CLOSURE(peek(0));
+                ObjClass* klass = AS_CLASS(peek(1));
                 switch (type) {
                     case INITIALIZER:
                         klass->initializer = method;
+                        defineMethod(method->function->name);
                         break;
 
                     default:

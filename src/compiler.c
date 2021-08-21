@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "common.h"
-#include "compiler.h"
 #include "memory.h"
 #include "scanner.h"
 #include "table.h"
@@ -325,6 +324,13 @@ static void dot(bool canAssign) {
     }
     else if (match(TOKEN_LEFT_PAREN)) {
         uint8_t argCount = argumentList();
+        for (int i = 0; specialMethodNames[i].name != NULL; i++) {
+            if (strcmp(AS_STRING(currentChunk()->constants.values[name])->chars, specialMethodNames[i].name) == 0) {
+                emitBytes(INVOKE_SPECIAL, i);
+                emitBytes(name, argCount);
+                return;
+            }
+        }
         emitBytes(INVOKE, name);
         emitByte(argCount);
     }
@@ -539,7 +545,7 @@ static void super_(bool canAssign) {
     if (match(TOKEN_LEFT_PAREN)) {
         uint8_t argCount = argumentList();
         namedVariable(syntheticToken("super"), false);
-        emitBytes(SUPER_INVOKE, name);
+        emitBytes(INVOKE_SUPER, name);
         emitByte(argCount);
     }
     else {

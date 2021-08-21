@@ -20,7 +20,7 @@ test: debug $(TEST_SNAPSHOT)
 $(TEST_SNAPSHOT): $(TOOL_SOURCES)
 	@ mkdir -p build
 	@ echo "Compiling Dart snapshot..."
-	@ dart --snapshot=$@ --snapshot-kind=app-jit tool/bin/test.dart clox >/dev/null
+	@ dart --snapshot=$@ --snapshot-kind=app-jit tool/bin/test.dart clox
 
 # Compile a debug build of clox.
 debug:

@@ -41,7 +41,8 @@ typedef enum {
     LOOP_BACK,
     CALL,
     INVOKE,
-    SUPER_INVOKE,
+    INVOKE_SPECIAL,
+    INVOKE_SUPER,
     MAKE_CLOSURE,
     CLOSE_UPVALUE,
     MAKE_CLASS,
@@ -54,6 +55,13 @@ typedef enum {
 typedef enum {
     INITIALIZER,
 } SpecialMethodType;
+
+typedef struct {
+    const char* name;
+    int length;
+} SpecialMethodName;
+
+extern SpecialMethodName specialMethodNames[];
 
 
 typedef struct {

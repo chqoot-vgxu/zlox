@@ -4,6 +4,11 @@
 #include "memory.h"
 #include "vm.h"
 
+SpecialMethodName specialMethodNames[] = {
+    [INITIALIZER] = {"init", 4},
+    {NULL, 0}
+};
+
 void initLineArray(LineArray* lineArray) {
     lineArray->count = 1;
     lineArray->capacity = 0;

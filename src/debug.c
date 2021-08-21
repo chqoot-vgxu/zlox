@@ -61,6 +61,16 @@ static int invokeInstruction(const char* name, Chunk* chunk, int offset) {
     return offset + 3;
 }
 
+static int invokeSpecialInstruction(const char* name, Chunk* chunk, int offset) {
+    uint8_t type = chunk->code[offset + 1];
+    uint8_t constant = chunk->code[offset + 2];
+    uint8_t argCount = chunk->code[offset + 3];
+    printf("%-15s (%d args) %4d '", name, argCount, type);
+    printValue(chunk->constants.values[constant]);
+    printf("'\n");
+    return offset + 3;
+}
+
 static int makeSpecialMethodInstruction(const char* name, Chunk* chunk, int offset) {
     const char * specialName;
     SpecialMethodType type = (SpecialMethodType) chunk->code[offset + 1];
@@ -196,8 +206,11 @@ int disassembleInstruction(Chunk* chunk, int offset) {
         case INVOKE:
             return invokeInstruction("INVOKE", chunk, offset);
 
-        case SUPER_INVOKE:
-            return invokeInstruction("SUPER_INVOKE", chunk, offset);
+        case INVOKE_SPECIAL:
+            return invokeSpecialInstruction("INVOKE_SPECIAL", chunk, offset);
+
+        case INVOKE_SUPER:
+            return invokeInstruction("INVOKE_SUPER", chunk, offset);
 
         case MAKE_CLOSURE: {
             offset++;

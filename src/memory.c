@@ -13,11 +13,11 @@
 
 void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
     vm.bytesAllocated += newSize - oldSize;
-    if (newSize > oldSize) {
 #ifdef DEBUG_STRESS_GC
+    if (newSize > oldSize) {
         collectGarbage();
-#endif
     }
+#endif
 
     if (newSize > oldSize && vm.bytesAllocated > vm.nextGC) {
         collectGarbage();
@@ -155,10 +155,12 @@ static void freeObject(Obj* object) {
             FREE(ObjFunction, object);
             break;
         }
+
         case OBJ_NATIVE: {
             FREE(ObjNative, object);
             break;
         }
+
         case OBJ_STRING: {
             ObjString* string = (ObjString*)object;
             FREE_STRING(object, string->length);
