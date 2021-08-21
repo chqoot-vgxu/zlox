@@ -21,6 +21,7 @@ typedef struct {
     Value stack[STACK_MAX];
     Value* stackTop;
 
+    bool mark;
     size_t bytesAllocated;
     size_t nextGC;
     Obj* objects;
