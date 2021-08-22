@@ -17,8 +17,8 @@ static Obj* allocateObject(size_t size, ObjType type) {
     object->type = type;
     object->isMarked = !vm.mark;
 
-    object->next = vm.objects;
-    vm.objects = object;
+    object->next = vm.nursery;
+    vm.nursery = object;
 
 #ifdef DEBUG_LOG_GC
     printf("%p allocate %zu for %d\n", (void*)object, size, type);

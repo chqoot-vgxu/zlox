@@ -76,9 +76,18 @@ void initVM() {
     resetStack();
 
     vm.mark = true;
+    vm.maxHeapSize = config.maxHeapSize;
+    vm.maxNurserySizePercent = config.maxNurserySizePercent;
+    vm.minNurserySizePercent = config.minNurserySizePercent;
+    vm.maxNurserySize = (vm.maxHeapSize * vm.maxNurserySizePercent) / 100;
+    vm.minNurserySize = (vm.maxHeapSize * vm.minNurserySizePercent) / 100;
+    vm.nurserySize = 0;
     vm.bytesAllocated = 0;
-    vm.nextGC = 1024 * 1024;
-    vm.objects = NULL;
+    vm.nextGC = vm.minNurserySize;
+    vm.nextFullGC = 1024 * 1024;
+    vm.nursery = NULL;
+    vm.survivors = NULL;
+    vm.tenured = NULL;
 
     vm.grayCount = 0;
     vm.grayCapacity = 0;

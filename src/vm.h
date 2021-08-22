@@ -22,9 +22,18 @@ typedef struct {
     Value* stackTop;
 
     bool mark;
+    size_t maxHeapSize;
+    int minNurserySizePercent;
+    int maxNurserySizePercent;
+    size_t maxNurserySize;
+    size_t minNurserySize;
+    size_t nurserySize;
     size_t bytesAllocated;
     size_t nextGC;
-    Obj* objects;
+    size_t nextFullGC;
+    Obj* nursery;
+    Obj* survivors;
+    Obj* tenured;
     int grayCount;
     int grayCapacity;
     Obj** grayStack;

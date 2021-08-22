@@ -1,9 +1,9 @@
 #include <stdlib.h>
 
-#ifdef DEBUG_LOG_GC
+// #ifdef DEBUG_LOG_GC
 #include <stdio.h>
 #include "debug.h"
-#endif
+// #endif
 
 #include "compiler.h"
 #include "memory.h"
@@ -12,15 +12,18 @@
 #define GC_HEAP_GROW_FACTOR 2
 
 void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
-    vm.bytesAllocated += newSize - oldSize;
-#ifdef DEBUG_STRESS_GC
+    size_t delta = newSize - oldSize;
+    vm.bytesAllocated += delta;
+    vm.nurserySize += delta;
+
     if (newSize > oldSize) {
+#ifdef DEBUG_STRESS_GC
         collectGarbage();
-    }
 #endif
 
-    if (newSize > oldSize && vm.bytesAllocated > vm.nextGC) {
-        collectGarbage();
+        if (vm.nurserySize > vm.nextGC) {
+            collectGarbage();
+        }
     }
 
     if (newSize == 0) {
@@ -201,9 +204,9 @@ static void traceReferences() {
     }
 }
 
-static void sweep() {
+static Obj* sweepGen(Obj** generation) {
     Obj* previous = NULL;
-    Obj* object = vm.objects;
+    Obj* object = *generation;
     while (object != NULL) {
         if (IS_MARKED(object)) {
             previous = object;
@@ -216,11 +219,27 @@ static void sweep() {
                 previous->next = object;
             }
             else {
-                vm.objects = object;
+                *generation = object;
             }
 
             freeObject(unreached);
         }
+    }
+
+    return previous;
+}
+
+static void sweep() {
+    Obj* lastSurvivor = sweepGen(&vm.nursery);
+
+    if (vm.bytesAllocated > vm.nextFullGC) {
+        sweepGen(&vm.tenured);
+    }
+
+    if (lastSurvivor != NULL) {
+        lastSurvivor->next = vm.survivors;
+        vm.survivors = vm.nursery;
+        vm.nursery = NULL;
     }
 }
 
@@ -235,7 +254,13 @@ void collectGarbage() {
     tableRemoveWhite(&vm.strings);
     sweep();
 
-    vm.nextGC = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;
+    size_t nextGC = vm.nurserySize * GC_HEAP_GROW_FACTOR + vm.minNurserySize;
+    vm.nextGC = nextGC < vm.maxNurserySize ? nextGC : vm.maxNurserySize;
+    vm.nurserySize = 0;
+
+    size_t nextFullGC = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;
+    vm.nextFullGC = nextFullGC < vm.maxHeapSize ? nextFullGC : vm.maxHeapSize;
+
     vm.mark = !vm.mark;
 
 #ifdef DEBUG_LOG_GC
@@ -247,7 +272,21 @@ void collectGarbage() {
 }
 
 void freeObjects() {
-    Obj* object = vm.objects;
+    Obj* object = vm.nursery;
+    while (object != NULL) {
+        Obj* next = object->next;
+        freeObject(object);
+        object = next;
+    }
+
+    object = vm.survivors;
+    while (object != NULL) {
+        Obj* next = object->next;
+        freeObject(object);
+        object = next;
+    }
+
+    object = vm.tenured;
     while (object != NULL) {
         Obj* next = object->next;
         freeObject(object);

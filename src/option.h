@@ -5,14 +5,19 @@ typedef struct {
     const char* fileName;
     bool quiet;
     bool compileOnly;
+    size_t maxHeapSize;
+    int maxNurserySizePercent;
+    int minNurserySizePercent;
 } Config;
 
 extern Config config;
 
-typedef void (*Action)();
+typedef struct Option Option;
+typedef void (*Action)(Option option, const char* arg);
 
-typedef struct {
+typedef struct Option {
     const char* longName;
+    int length;
     char shortName;
     Action action;
     const char* description;
