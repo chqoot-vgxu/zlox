@@ -22,6 +22,9 @@
 #define FREE(type, pointer) \
     reallocate(pointer, sizeof(type), 0)
 
+#define IS_MARKED(object) (object)->isMarked == vm.mark
+#define MARK(object) (object)->isMarked = vm.mark
+
 void* reallocate(void* pointer, size_t oldSize, size_t newSize);
 void markObject(Obj* object);
 void markValue(Value value);

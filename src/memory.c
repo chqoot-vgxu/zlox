@@ -10,8 +10,6 @@
 #include "vm.h"
 
 #define GC_HEAP_GROW_FACTOR 2
-#define IS_MARKED(object) object->isMarked == vm.mark
-#define MARK(object) object->isMarked = vm.mark;
 
 void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
     vm.bytesAllocated += newSize - oldSize;
