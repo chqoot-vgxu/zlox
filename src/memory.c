@@ -204,10 +204,10 @@ static void traceReferences() {
     }
 }
 
-static Obj* sweepGen(Obj** generation) {
+static void sweepGen(Obj** generation, Obj* end) {
     Obj* previous = NULL;
     Obj* object = *generation;
-    while (object != NULL) {
+    while (object != end) {
         if (IS_MARKED(object)) {
             previous = object;
             object = object->next;
@@ -225,22 +225,16 @@ static Obj* sweepGen(Obj** generation) {
             freeObject(unreached);
         }
     }
-
-    return previous;
 }
 
 static void sweep() {
-    Obj* lastSurvivor = sweepGen(&vm.nursery);
+    sweepGen(&vm.nursery, vm.tenured);
 
     if (vm.bytesAllocated > vm.nextFullGC) {
-        sweepGen(&vm.tenured);
+        sweepGen(&vm.tenured, NULL);
     }
 
-    if (lastSurvivor != NULL) {
-        lastSurvivor->next = vm.tenured;
-        vm.tenured = vm.nursery;
-        vm.nursery = NULL;
-    }
+    vm.tenured = vm.nursery;
 }
 
 void collectGarbage() {
@@ -273,13 +267,6 @@ void collectGarbage() {
 
 void freeObjects() {
     Obj* object = vm.nursery;
-    while (object != NULL) {
-        Obj* next = object->next;
-        freeObject(object);
-        object = next;
-    }
-
-    object = vm.tenured;
     while (object != NULL) {
         Obj* next = object->next;
         freeObject(object);
