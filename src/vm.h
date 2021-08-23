@@ -32,7 +32,6 @@ typedef struct {
     size_t nextGC;
     size_t nextFullGC;
     Obj* nursery;
-    Obj* survivors;
     Obj* tenured;
     int grayCount;
     int grayCapacity;

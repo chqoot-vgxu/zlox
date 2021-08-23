@@ -237,8 +237,8 @@ static void sweep() {
     }
 
     if (lastSurvivor != NULL) {
-        lastSurvivor->next = vm.survivors;
-        vm.survivors = vm.nursery;
+        lastSurvivor->next = vm.tenured;
+        vm.tenured = vm.nursery;
         vm.nursery = NULL;
     }
 }
@@ -256,10 +256,10 @@ void collectGarbage() {
 
     size_t nextGC = vm.nurserySize * GC_HEAP_GROW_FACTOR + vm.minNurserySize;
     vm.nextGC = nextGC < vm.maxNurserySize ? nextGC : vm.maxNurserySize;
-    vm.nurserySize = 0;
 
     size_t nextFullGC = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;
-    vm.nextFullGC = nextFullGC < vm.maxHeapSize ? nextFullGC : vm.maxHeapSize;
+    vm.nextFullGC = nextFullGC < (vm.maxHeapSize - vm.nurserySize) ? nextFullGC : vm.maxHeapSize;
+    vm.nurserySize = 0;
 
     vm.mark = !vm.mark;
 
@@ -273,13 +273,6 @@ void collectGarbage() {
 
 void freeObjects() {
     Obj* object = vm.nursery;
-    while (object != NULL) {
-        Obj* next = object->next;
-        freeObject(object);
-        object = next;
-    }
-
-    object = vm.survivors;
     while (object != NULL) {
         Obj* next = object->next;
         freeObject(object);

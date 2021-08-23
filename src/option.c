@@ -34,12 +34,12 @@ Option optionList[] = {
 };
 
 static void missingValueError() {
-    fprintf(stderr, "Missing value");
+    fprintf(stderr, "Missing value\n");
     exit(-2);
 }
 
 static void invalidValueError(int value) {
-    fprintf(stderr, "Invalid value %d", value);
+    fprintf(stderr, "Invalid value %d\n", value);
     exit(-3);
 }
 
@@ -105,7 +105,7 @@ static int findArg(bool useLongName, const char* name) {
     for (int i = 0; optionList[i].longName != NULL; i++) {
         Option option = optionList[i];
 
-        if ((useLongName && strcmp(option.longName, name) == 0) || option.shortName == name[0]) {
+        if ((useLongName && strncmp(option.longName, name, option.length) == 0) || option.shortName == name[0]) {
             return i;
         }
     }

@@ -86,7 +86,6 @@ void initVM() {
     vm.nextGC = vm.minNurserySize;
     vm.nextFullGC = 1024 * 1024;
     vm.nursery = NULL;
-    vm.survivors = NULL;
     vm.tenured = NULL;
 
     vm.grayCount = 0;

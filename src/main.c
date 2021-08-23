@@ -63,9 +63,9 @@ static void runFile(const char* path) {
 }
 
 int main(int argc, const char* argv[]) {
-    initVM();
-
     parseArgs(argc, argv);
+
+    initVM();
 
     if (config.fileName == NULL) {
         if (!config.quiet) printf("zlox version %s\n", VERSION_NUMBER);
