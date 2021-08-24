@@ -47,7 +47,7 @@ static void runtimeError(const char* format, ...) {
     vfprintf(stderr, format, args);
     va_end(args);
     fputs("\n", stderr);
-    
+
     for (int i = vm.frameCount - 1; i >= 0; i--) {
         CallFrame* frame = &vm.frames[i];
         ObjFunction* function = frame->closure->function;
@@ -328,6 +328,7 @@ static InterpretResult run() {
 #define READ_SHORT() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
 #define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_BYTE()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
+
 #define BINARY_OP(valueType, op) \
     do { \
         if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
@@ -338,6 +339,19 @@ static InterpretResult run() {
         double b = AS_NUMBER(pop()); \
         double a = AS_NUMBER(pop()); \
         push(valueType(a op b)); \
+    } while (false)
+
+#define INPLACE_OP(valueType, op) \
+    do { \
+        uint8_t slot = READ_BYTE(); \
+        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(frame->slots[slot])) { \
+            SYNC_IP(); \
+            runtimeError("Operands must be numbers."); \
+            return INTERPRET_RUNTIME_ERROR; \
+        } \
+        double b = AS_NUMBER(peek(0)); \
+        double a = AS_NUMBER(frame->slots[slot]); \
+        frame->slots[slot] = valueType(a op b); \
     } while (false)
 
 
@@ -552,6 +566,39 @@ static InterpretResult run() {
                 BINARY_OP(NUMBER_VAL, / );
                 break;
 
+            case INPLACE_ADD: {
+                uint8_t slot = READ_BYTE();
+                if (IS_STRING(peek(0)) && IS_STRING(frame->slots[slot])) {
+                    ObjString* b = AS_STRING(peek(0));
+                    ObjString* a = AS_STRING(frame->slots[slot]);
+                    ObjString* r = concatenate(a, b);
+                    frame->slots[slot] = OBJ_VAL(r);
+                }
+                else if (IS_NUMBER(peek(0)) && IS_NUMBER(frame->slots[slot])) {
+                    double b = AS_NUMBER(peek(0));
+                    double a = AS_NUMBER(frame->slots[slot]);
+                    frame->slots[slot] = NUMBER_VAL(a + b);
+                }
+                else {
+                    SYNC_IP();
+                    runtimeError("Operands must be two numbers or two strings.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
+
+            case INPLACE_SUBTRACT:
+                INPLACE_OP(NUMBER_VAL, -);
+                break;
+
+            case INPLACE_MULTIPLY:
+                INPLACE_OP(NUMBER_VAL, *);
+                break;
+
+            case INPLACE_DIVIDE:
+                INPLACE_OP(NUMBER_VAL, / );
+                break;
+
             case UNARY_NOT:
                 push(BOOL_VAL(isFalsey(pop())));
                 break;
@@ -705,7 +752,7 @@ static InterpretResult run() {
                 break;
 
             case MAKE_SPECIAL_METHOD: {
-                SpecialMethodType type = (SpecialMethodType) READ_BYTE();
+                SpecialMethodType type = (SpecialMethodType)READ_BYTE();
                 ObjClosure* method = AS_CLOSURE(peek(0));
                 ObjClass* klass = AS_CLASS(peek(1));
                 switch (type) {
@@ -745,6 +792,7 @@ static InterpretResult run() {
         }
     }
 
+#undef INPLACE_OP
 #undef BINARY_OP
 #undef READ_STRING
 #undef READ_CONSTANT
@@ -753,7 +801,7 @@ static InterpretResult run() {
 #undef SYNC_IP
 }
 
-InterpretResult interpret(const char* source) {    
+InterpretResult interpret(const char* source) {
     ObjFunction* function = compile(source);
     if (function == NULL) return INTERPRET_COMPILE_ERROR;
 

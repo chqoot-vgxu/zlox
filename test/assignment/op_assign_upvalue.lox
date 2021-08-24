@@ -1,0 +1,20 @@
+{
+  var a = 0;
+
+  fn f1() { a += 2; }
+  fn f2() { a -= 1; }
+  fn f3() { a *= 4; }
+  fn f4() { a /= 2; }
+
+  f1();
+  println(a); // expect: 2
+
+  f2();
+  println(a); // expect: 1
+
+  f3();
+  println(a); // expect: 4
+
+  f4();
+  println(a); // expect: 2
+}

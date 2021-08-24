@@ -469,10 +469,30 @@ static void or_(bool canAssign) {
     patchJump(elseJump);
 }
 
+static void inplaceAssign(int arg) {
+    uint8_t inplaceOp;
+    switch (parser.previous.type) {
+        case TOKEN_PLUS_EQUALS:  inplaceOp = INPLACE_ADD; break;
+        case TOKEN_MINUS_EQUALS: inplaceOp = INPLACE_SUBTRACT; break;
+        case TOKEN_SLASH_EQUALS: inplaceOp = INPLACE_DIVIDE; break;
+        case TOKEN_STAR_EQUALS:  inplaceOp = INPLACE_MULTIPLY; break;
+        default: error("Invalid operator."); return; // unreachable
+    }
+
+    expression();
+    emitBytes(inplaceOp, arg);
+}
+
 static void assign(uint8_t getOp, uint8_t setOp, int arg) {
     if (match(TOKEN_EQUAL)) {
         expression();
         emitBytes(setOp, arg);
+        return;
+    }
+
+    if (setOp == SET_LOCAL) {
+        advance();
+        inplaceAssign(arg);
         return;
     }
 

@@ -176,6 +176,18 @@ int disassembleInstruction(Chunk* chunk, int offset) {
         case BINARY_DIVIDE:
             return simpleInstruction("BINARY_DIVIDE", offset);
 
+        case INPLACE_ADD:
+            return byteInstruction("INPLACE_ADD", chunk, offset);
+
+        case INPLACE_SUBTRACT:
+            return byteInstruction("INPLACE_SUBTRACT", chunk, offset);
+
+        case INPLACE_MULTIPLY:
+            return byteInstruction("INPLACE_MULTIPLY", chunk, offset);
+
+        case INPLACE_DIVIDE:
+            return byteInstruction("INPLACE_DIVIDE", chunk, offset);
+
         case UNARY_NOT:
             return simpleInstruction("UNARY_NOT", offset);
 
