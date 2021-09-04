@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "common.h"
 #include "memory.h"
@@ -359,7 +360,68 @@ static void number(bool canAssign) {
 }
 
 static void string(bool canAssign) {
-    emitConstant(OBJ_VAL(makeString(parser.previous.start + 1, parser.previous.length - 2)));
+    char string[parser.previous.length];
+    int length = 0;
+    for (int i = 1; i < parser.previous.length - 1; i++) {
+        if (parser.previous.start[i] == '\\') { // escape
+            switch (parser.previous.start[++i]) {
+                case 'a':  string[length++] = '\a'; break;
+                case 'b':  string[length++] = '\b'; break;
+                case 'e':  string[length++] = '\e'; break;
+                case 'f':  string[length++] = '\f'; break;
+                case 'n':  string[length++] = '\n'; break;
+                case 'r':  string[length++] = '\r'; break;
+                case 't':  string[length++] = '\t'; break;
+                case 'v':  string[length++] = '\v'; break;
+                case '\'': string[length++] = '\''; break;
+                case '"':  string[length++] = '\"'; break;
+                case '\\': string[length++] = '\\'; break;
+
+                case 'x': { // hex byte
+                    const char * hex = &parser.previous.start[i + 1];
+                    char byte = 0;
+                    int count = 0;
+                    for (; isxdigit(hex[count]) && count < 2; count++) {
+                        char c = hex[count];
+                        byte = (byte << 4) | ((c & 0xF) + (c >> 6)) | ((c >> 3) & 0x8);
+                    }
+
+                    i += count;
+                    string[length++] = byte;
+                    break;
+                }
+
+                case 'u':
+                case 'U':
+                    error("Unicode code points not implemented yet");
+                    return;
+
+                default: {
+                    if (isdigit(parser.previous.start[i])) { // octal byte
+                        const char* oct = &parser.previous.start[i];
+                        int count = 0;
+                        char byte = 0;
+                        for (; isdigit(oct[count]) && count < 3; count++) {
+                            char c = oct[count];
+                            byte = (byte << 3) | (c - '0');
+                        }
+
+                        i += count - 1;
+                        string[length++] = byte;
+                    }
+                    else {
+                        error("Bad escape sequence");
+                        return;
+                    }
+                    break;
+                }
+            }
+        }
+        else {
+            string[length++] = parser.previous.start[i];
+        }
+    }
+    emitConstant(OBJ_VAL(makeString(string, length)));
 }
 
 static bool identifiersEqual(Token* a, Token* b) {

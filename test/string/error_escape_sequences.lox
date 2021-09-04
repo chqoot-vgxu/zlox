@@ -1,0 +1,2 @@
+// [line 2] Error at '"\s"': Bad escape sequence
+println("\s");

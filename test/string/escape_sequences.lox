@@ -1,0 +1,11 @@
+println("\x41"); // expect: A
+println("\x62"); // expect: b
+
+println("\103"); // expect: C
+println("\144"); // expect: d
+
+println("\x4162"); // expect: A62
+
+println("\"\""); // expect: ""
+
+println("L\x6f\170"); // expect: Lox
